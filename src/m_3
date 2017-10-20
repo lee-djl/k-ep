@@ -1,0 +1,65 @@
+    m_3%comm=mpi_comm_world
+    m_3%sym=2   !Real symmetric
+    m_3%par=1
+
+    m_3%job=-1
+    CALL dmumps(m_3)
+
+    m_3%n=n
+    m_3%nz=nz_a+nz_b
+
+    ALLOCATE(m_3%irn(m_3%nz),m_3%jcn(m_3%nz),m_3%a(m_3%nz),m_3%rhs(n))
+    ALLOCATE(m_3%perm_in(n))    
+    m_3%jcn(1:nz_a)=col_indx_a
+    m_3%jcn(nz_a+1:nz_a+nz_b)=col_indx_b
+
+    DO i=1,row_pntr_a(1)-1
+        m_3%irn(i)=m_3%jcn(i)
+    END DO
+
+    DO i=2,n
+        DO j=row_pntr_a(i),row_pntr_a(i+1)-1
+        m_3%irn(j)=i
+        END DO
+    END DO
+    
+    DO i=1,row_pntr_b(1)-1
+        m_3%irn(nz_a+i)=m_3%jcn(i)
+    END DO
+
+    DO i=2,n
+        DO j=row_pntr_b(i),row_pntr_b(i+1)-1
+        m_3%irn(nz_a+j)=i
+        END DO
+    END DO    
+  
+	m_3%icntl(1)=6
+    m_3%icntl(2)=0
+    m_3%icntl(3)=0		!Suppress output
+    m_3%icntl(4)=2
+    m_3%icntl(5)=0
+    m_3%icntl(6)=0
+    m_3%icntl(7)=1    	!Reuse fill-reducing ordering
+    m_3%icntl(8)=77   	!Automatic scaling
+    m_3%icntl(9)=1
+    m_3%icntl(10)=1   	!Refinement for solving linear equation
+    m_3%icntl(11)=0
+    m_3%icntl(12)=1   	!Reuse fill-reducing ordering
+    m_3%icntl(13)=1   	!Sequential
+    m_3%icntl(14)=50
+    m_3%icntl(18)=0
+    m_3%icntl(19)=0
+    m_3%icntl(20)=0
+    m_3%icntl(21)=0
+    m_3%icntl(22)=0
+    m_3%icntl(23)=0
+    m_3%icntl(24)=0
+    m_3%icntl(25)=0
+    m_3%icntl(26)=0
+    m_3%icntl(27)=-8
+    m_3%icntl(28)=1   	!Sequential
+    m_3%icntl(29)=0
+    m_3%icntl(30)=0
+    m_3%icntl(31)=0   	!Keep matrix factors
+    m_3%icntl(32)=0
+    m_3%icntl(33)=0

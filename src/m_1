@@ -1,0 +1,55 @@
+    m_1%comm=mpi_comm_world
+    m_1%sym=1   !Real symmetric positive definite
+    m_1%par=1
+
+    m_1%job=-1
+    CALL dmumps(m_1)
+
+    m_1%n=n
+    m_1%nz=nz_b
+
+    ALLOCATE(m_1%irn(m_1%nz),m_1%jcn(m_1%nz),m_1%a(m_1%nz),m_1%rhs(n))
+    ALLOCATE(m_ord(n))
+    m_1%jcn=col_indx_b
+    m_1%a=b
+
+    DO i=1,row_pntr_b(1)-1
+        m_1%irn(i)=m_1%jcn(i)
+    END DO
+
+    DO i=2,n
+        DO j=row_pntr_b(i),row_pntr_b(i+1)-1
+        m_1%irn(j)=i
+        END DO
+    END DO
+    
+	m_1%icntl(1)=6
+    m_1%icntl(2)=0
+    m_1%icntl(3)=0		!Suppress output
+    m_1%icntl(4)=2
+    m_1%icntl(5)=0
+    m_1%icntl(6)=0
+    m_1%icntl(7)=5      !METIS ordering
+    m_1%icntl(8)=0
+    m_1%icntl(9)=1
+    m_1%icntl(10)=1     !Refinement for solving linear equation
+    m_1%icntl(11)=0
+    m_1%icntl(12)=1
+    m_1%icntl(13)=1     !Sequential
+    m_1%icntl(14)=50
+    m_1%icntl(18)=0
+    m_1%icntl(19)=0
+    m_1%icntl(20)=0
+    m_1%icntl(21)=0
+    m_1%icntl(22)=0
+    m_1%icntl(23)=0
+    m_1%icntl(24)=0
+    m_1%icntl(25)=0
+    m_1%icntl(26)=0
+    m_1%icntl(27)=-8
+    m_1%icntl(28)=1     !Sequential
+    m_1%icntl(29)=0
+    m_1%icntl(30)=0
+    m_1%icntl(31)=0     !Maintain matrix factors
+    m_1%icntl(32)=0
+    m_1%icntl(33)=0
