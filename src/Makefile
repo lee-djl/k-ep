@@ -8,8 +8,6 @@ all: $(TARGET)
 
 include ../Makefile.inc
 
-%.o : %.f
-	$(FC) $(FFLAGS) $(INCLUDE) -c $< 
 %.o : %.f90
 	$(FC) $(FFLAGS) $(INCLUDE) -c $< 
 
