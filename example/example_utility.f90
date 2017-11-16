@@ -3,11 +3,9 @@
     SUBROUTINE example_readmtx(ipath,iunit,n,nz,indx,jndx,rval)
     IMPLICIT NONE
     CHARACTER(256) :: ipath
-    INTEGER :: iunit,n,nz,indx,jndx
-    DOUBLE PRECISION :: rval
-!
-    ALLOCATABLE :: indx,jndx,rval
-    DIMENSION :: indx(:),jndx(:),rval(:)
+    INTEGER :: iunit,n,nz
+    INTEGER, ALLOCATABLE, DIMENSION(:) :: indx,jndx
+    DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:) :: rval
 !
     CHARACTER(7) :: field
     CHARACTER(10) :: rep
