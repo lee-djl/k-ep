@@ -1,47 +1,69 @@
+    MODULE mod_kep
+    CONTAINS
     SUBROUTINE kep(n,&
     &   nz_a,indx_a,jndx_a,rval_a,&
     &   nz_b,indx_b,jndx_b,rval_b,&
     &   k,iprm,keval,kevec,info)
 !=======================================================================
 !
-!   n       : <input> matrix size
+!   n       : <INPUT, INTEGER>
+!             matrix size
 !
-!   nz_a    : <input> number of non-zero elements of matrix A
-!   indx_a  : <input> row index of non-zero elements of matrix A
-!   jndx_a  : <input> column index of non-zero elements of matrix A
-!   rval_a  : <input> value of non-zero elements of matrix A
+!   nz_a    : <INPUT, INTEGER>
+!             number of non-zero elements of matrix A
+!   indx_a  : <INPUT, INTEGER array, DIMENSION(nz_a)>
+!             row index of non-zero elements of matrix A
+!   jndx_a  : <INPUT, INTEGER array, DIMENSION(nz_a)>
+!             column index of non-zero elements of matrix A
+!   rval_a  : <INPUT, DOUBLE PRECISION array, DIMENSION(nz_a)>
+!             value of non-zero elements of matrix A
 !
-!   nz_b    : <input> number of non-zero elements of matrix B
-!   indx_b  : <input> row index of non-zero elements of matrix B
-!   jndx_b  : <input> column index of non-zero elements of matrix B
-!   rval_b  : <input> value of non-zero elements of matrix B
+!   nz_b    : <INPUT, INTEGER>
+!             number of non-zero elements of matrix B
+!   indx_b  : <INPUT, INTEGER array, DIMENSION(nz_b)>
+!             row index of non-zero elements of matrix B
+!   jndx_b  : <INPUT, INTEGER array, DIMENSION(nz_b)>
+!             column index of non-zero elements of matrix B
+!   rval_b  : <INPUT, DOUBLE PRECISION array, DIMENSION(nz_b)>
+!             value of non-zero elements of matrix B
 !
-!   k       : <input> target index
+!   k       : <INPUT, INTEGER>
+!             target index.
 !             Required to satisfy 1 < k < n
 !
-!   iprm    : <input> parameters for kep
-!   iprm(1) : stopping criterion for bisection. See m_max in reference [1]
-!             ( = maximum number of eigenpairs computed together)
-!             Required to satisfy 1 <= iprm(1) < n
-!   iprm(2) : 10**-iprm(2) is tolerance for relative residual 2-norm. See tau_res in [1]
-!             Required to satisfy 1 <= iprm(2) <= 16
-!   iprm(3) : 10**-iprm(3) is tolerance for relative difference 2-norm. See tau_diff in [1]
-!             Required to satisfy 1 <= iprm(3) <= 16
-!   iprm(12): maximum iteration count to set an initial interval. See Algorithm 2 in [1]
-!             ( = maximum iteration count for Lanczos)
-!             Required to satisfy 2 <= iprm(11) <= n
-!   iprm(12): maximum iteration count to narrow down the interval. See Algorithm 1' in [1]
-!             ( = maximum iteration count for Bisection)
-!             Required to satisfy 0 <= iprm(12) <= 64
-!   iprm(13): maximum iteration count to compute eigenpairs of the interval. See Algorithm 3 in [1]
-!             ( = maximum iteration count for shift-and-invert Lanczos)
-!             Required to satisfy iprm(1) <= iprm(13) <= n
+!   iprm    : <INPUT, INTEGER array>
+!             parameters for SUBROUTINE kep
+!   iprm(1) : stopping criterion for bisection
+!             ( = maximum number of eigenpairs computed together).
+!             Required to satisfy 1 <= iprm(1) < n.
+!             See m_max in reference [1]    
+!   iprm(2) : 10**-iprm(2) is tolerance for relative residual 2-norm.
+!             Required to satisfy 1 <= iprm(2) <= 16.
+!             See tau_res in [1]
+!   iprm(3) : 10**-iprm(3) is tolerance for relative difference 2-norm.
+!             Required to satisfy 1 <= iprm(3) <= 16.
+!             See tau_diff in [1]    
+!   iprm(12): maximum iteration count to set an initial interval
+!             ( = maximum iteration count for Lanczos).
+!             Required to satisfy 2 <= iprm(11) <= n.
+!             See Algorithm 2 in [1]
+!   iprm(12): maximum iteration count to narrow down the interval
+!             ( = maximum iteration count for Bisection).
+!             Required to satisfy 0 <= iprm(12) <= 64.
+!             See Algorithm 1' in [1]
+!   iprm(13): maximum iteration count to compute eigenpairs of the interval
+!             ( = maximum iteration count for shift-and-invert Lanczos).
+!             Required to satisfy iprm(1) <= iprm(13) <= n.
+!             See Algorithm 3 in [1]    
 !   iprm(21): Suppress detailed output to terminal if iprm(21) < 0
 !
-!   kevec   : <output> k-th eigenvalue
-!   kevec   : <output> k-th eigenvector normalized with respect to 2-norm
+!   kevec   : <OUTPUT, DOUBLE PRECISON array, ALLOCATABLE(:)>
+!             k-th eigenvalue
+!   kevec   : <OUTPUT, DOUBLE PRECISON array, ALLOCATABLE(:)>
+!             k-th eigenvector normalized with respect to 2-norm
 !
-!   info    : <output> diagonostic information
+!   info    : <OUTPUT, INTEGER>
+!             diagonostic information
 !   info = 0: successful exit
 !   info < 0: illegal value in k, iprm
 !   info > 0: failed to find the k-th eigenpair
@@ -50,8 +72,9 @@
 !
 !   References
 !   [1] D. Lee, T. Hoshi, T. Sogabe, Y. Miyatake, S.-L. Zhang,
-!   Solution of the k-th eigenvalue problem in large-scale electronic structure calculations,
-!   https://arxiv.org/abs/1710.05134.
+!       Solution of the k-th eigenvalue problem
+!       in large-scale electronic structure calculations,
+!       https://arxiv.org/abs/1710.05134.
 !
 !-----------------------------------------------------------------------
 !
@@ -62,12 +85,13 @@
     &   nz_b,indx_b,jndx_b, &
     &   k,iprm,info
     DOUBLE PRECISION ::     &
-    &   rval_a,rval_b,      &
-    &   keval,kevec
+    &   rval_a,rval_b
     DIMENSION ::            &
     &   indx_a(nz_a),jndx_a(nz_a),rval_a(nz_a),&
     &   indx_b(nz_b),jndx_b(nz_b),rval_b(nz_b),&
-    &   iprm(30),kevec(n)
+    &   iprm(30)
+    DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:) ::  &
+    &   keval,kevec
 !
 !=======================================================================
 !
@@ -99,11 +123,11 @@
     INTEGER :: imax_si,its_si,ijob_si,ijob_test,info_test
     DOUBLE PRECISION :: tol_res,tol_dif,                    &
     &   v_si,bv_si,alpha_si,beta_si,theta_si,               &
-    &   y,lngth,egnval,egnvec,egnvec_old,res,errnorm
+    &   y,lngth,egnval,egnvec,egnvec_old,res,difnorm
     ALLOCATABLE :: v_si,bv_si,alpha_si,beta_si,theta_si,y,  &
-    &   egnval,egnvec,egnvec_old,res,errnorm
+    &   egnval,egnvec,egnvec_old,res,difnorm
     DIMENSION :: alpha_si(:),theta_si(:),beta_si(:),        &
-    &   egnval(:),res(:),errnorm(:)
+    &   egnval(:),res(:),difnorm(:)
     DIMENSION :: v_si(:,:),bv_si(:,:),y(:,:),egnvec(:,:),egnvec_old(:,:)
 !
 !   Time
@@ -157,6 +181,7 @@
 !
 !   Time and results
     cmpt_time=0.0E0
+    ALLOCATE(keval(1),kevec(n))
     keval=0.0D0
     kevec=0.0D0
 !
@@ -165,7 +190,7 @@
     &   si_2_r%shift(0:imax_bi),si_2_r%inertia(0:imax_bi))
     ALLOCATE(si_3%shift(1),si_3%inertia(1))
     ALLOCATE(egnval(mmax),egnvec(n,mmax+2),                     &
-    &   egnvec_old(n,mmax+2),res(mmax),errnorm(mmax))
+    &   egnvec_old(n,mmax),res(mmax),difnorm(mmax))
 !
 !   Convert data to Compressed Row Storage (CRS) format
     CALL kep_mtx2crs(n,nz_a,indx_a,jndx_a,rval_a,row_pntr_a,col_indx_a,a)
@@ -277,10 +302,10 @@
                 CALL mpi_finalize(ierr)
                 CALL kep_info(info)
                 IF(iprm(21).GE.0) CALL kep_summary(mmax,icnt,cmpt_time,&
-                &   si_1,si_2_l,si_2_r,si_3,egnval,res,errnorm,info)
+                &   si_1,si_2_l,si_2_r,si_3,egnval,res,difnorm,info)
                 DEALLOCATE(si_1%shift,si_1%inertia,                         &
                 &   si_2_l%shift,si_2_l%inertia,si_2_r%shift,si_2_r%inertia,&
-                &   si_3%shift,si_3%inertia,egnval,res,errnorm,egnvec,egnvec_old)
+                &   si_3%shift,si_3%inertia,egnval,res,difnorm,egnvec,egnvec_old)
                 RETURN
             END IF
         END IF
@@ -319,10 +344,10 @@
             CALL mpi_finalize(ierr)
             CALL kep_info(info)
             IF(iprm(21).GE.0) CALL kep_summary(mmax,icnt,cmpt_time,&
-            &   si_1,si_2_l,si_2_r,si_3,egnval,res,errnorm,info)
+            &   si_1,si_2_l,si_2_r,si_3,egnval,res,difnorm,info)
             DEALLOCATE(si_1%shift,si_1%inertia,                         &
             &   si_2_l%shift,si_2_l%inertia,si_2_r%shift,si_2_r%inertia,&
-            &   si_3%shift,si_3%inertia,egnval,res,errnorm,egnvec,egnvec_old)
+            &   si_3%shift,si_3%inertia,egnval,res,difnorm,egnvec,egnvec_old)
             RETURN
         END IF
 !
@@ -429,13 +454,13 @@
         CALL kep_convtest(n,imax_si,mmax,tol_res,tol_dif,i,j,&
         &   ijob_test,v_si,bv_si,beta_si,theta_si,&
         &   y,icnt(3),lngth,si_3%shift(1),&
-        &   egnval,egnvec,egnvec_old,res,errnorm,info_test)
+        &   egnval,egnvec,egnvec_old,res,difnorm,info_test)
         DO j=1,icnt(3)
             IF(info_test.EQ.0) THEN
                 CALL kep_convtest(n,imax_si,mmax,tol_res,tol_dif,i,j,&
                 &   ijob_test,v_si,bv_si,beta_si,theta_si,&
                 &   y,icnt(3),lngth,si_3%shift(1),&
-                &   egnval,egnvec,egnvec_old,res,errnorm,info_test)
+                &   egnval,egnvec,egnvec_old,res,difnorm,info_test)
                 CALL kep_matvec(n,nz_a,row_pntr_a,col_indx_a,a,&
                 &   egnvec(:,j),egnvec(:,mmax+1))
                 CALL kep_matvec(n,nz_b,row_pntr_b,col_indx_b,b,&
@@ -443,7 +468,7 @@
                 CALL kep_convtest(n,imax_si,mmax,tol_res,tol_dif,i,j,&
                 &   ijob_test,v_si,bv_si,beta_si,theta_si,&
                 &   y,icnt(3),lngth,si_3%shift(1),&
-                &   egnval,egnvec,egnvec_old,res,errnorm,info_test)
+                &   egnval,egnvec,egnvec_old,res,difnorm,info_test)
             END IF
         END DO
         IF(info_test.EQ.0) THEN
@@ -451,7 +476,7 @@
             CALL kep_convtest(n,imax_si,mmax,tol_res,tol_dif,i,j,&
             &   ijob_test,v_si,bv_si,beta_si,theta_si,&
             &   y,icnt(3),lngth,si_3%shift(1),&
-            &   egnval,egnvec,egnvec_old,res,errnorm,info_test)
+            &   egnval,egnvec,egnvec_old,res,difnorm,info_test)
         END IF
         CALL SYSTEM_CLOCK(clock_2,clock_rate,clock_max)
         cmpt_time(7)=cmpt_time(7)+REAL(clock_2-clock_1)/REAL(clock_rate)
@@ -469,13 +494,13 @@
             CALL mpi_finalize(ierr)
             CALL kep_info(info)
             IF(iprm(21).GE.0) CALL kep_summary(mmax,icnt,cmpt_time,&
-            &   si_1,si_2_l,si_2_r,si_3,egnval,res,errnorm,info)
+            &   si_1,si_2_l,si_2_r,si_3,egnval,res,difnorm,info)
             DEALLOCATE(si_1%shift,si_1%inertia,                         &
             &   si_2_l%shift,si_2_l%inertia,si_2_r%shift,si_2_r%inertia,&
-            &   si_3%shift,si_3%inertia,egnval,res,errnorm,egnvec,egnvec_old)
+            &   si_3%shift,si_3%inertia,egnval,res,difnorm,egnvec,egnvec_old)
             RETURN
         ELSE IF(info_test.GE.3) THEN
-            egnvec_old=egnvec
+            egnvec_old(:,1:icnt(3))=egnvec(:,1:icnt(3))
         END IF
         info_test=0
         ijob_test=1
@@ -495,12 +520,13 @@
 !---Time and results----------------------------------------------------
 !
     IF(iprm(21).GE.0) CALL kep_summary(mmax,icnt,cmpt_time,&
-        &   si_1,si_2_l,si_2_r,si_3,egnval,res,errnorm,info)
+        &   si_1,si_2_l,si_2_r,si_3,egnval,res,difnorm,info)
     DEALLOCATE(si_1%shift,si_1%inertia,                         &
     &   si_2_l%shift,si_2_l%inertia,si_2_r%shift,si_2_r%inertia,&
-    &   si_3%shift,si_3%inertia,egnval,res,errnorm,egnvec,egnvec_old)
+    &   si_3%shift,si_3%inertia,egnval,res,difnorm,egnvec,egnvec_old)
 !
 !-----------------------------------------------------------------------
 !
     RETURN
     END SUBROUTINE kep
+    END MODULE mod_kep

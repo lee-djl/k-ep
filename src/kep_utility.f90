@@ -129,19 +129,19 @@
     SUBROUTINE kep_convtest(n,imax,mmax,tol_res,tol_dif,its_si,its_test,&
     &   ijob,v,bv,beta,theta,&
     &   y,m,lngth,shift,&
-    &   egnval,egnvec,egnvec_old,res,errnorm,info)
+    &   egnval,egnvec,egnvec_old,resnorm,difnorm,info)
     IMPLICIT NONE
     INTEGER :: n,imax,mmax,its_si,its_test,ijob,m,info
     DOUBLE PRECISION :: v,bv,beta,theta,y,lngth,shift,&
-    &   egnval,egnvec,egnvec_old,res,errnorm
+    &   egnval,egnvec,egnvec_old,resnorm,difnorm
 !
-    DIMENSION :: egnval(mmax),res(mmax),errnorm(mmax)
+    DIMENSION :: egnval(mmax),resnorm(mmax),difnorm(mmax)
     DIMENSION :: theta(imax)
     DIMENSION :: beta(0:imax)
     DIMENSION :: y(IMAX,IMAX)
     DIMENSION :: v(n,imax+1)
     DIMENSION :: bv(n,0:imax+1)
-    DIMENSION :: egnvec(n,mmax+2),egnvec_old(n,mmax+2)
+    DIMENSION :: egnvec(n,mmax+2),egnvec_old(n,mmax)
 !
 !   Local arguments
     INTEGER :: i,j,k,l,theta_indx,indx
@@ -222,7 +222,7 @@
             x=x*theta(l)
             x(:)=x(:)+bv(:,its_si+1)*y(its_si,l)
 !
-!           Divisor of relative residual 2-norm (squared)
+!           Divisor of relative residual 2-norm
             CALL kep_innpro(n,x,x,x_nrm(j))
             egnvec(:,j)=x(:)/DSQRT(x_nrm(j))
         END DO
@@ -271,7 +271,7 @@
                 RETURN
             END IF
 !
-            res(j)=DSQRT(dtmp)
+            resnorm(j)=DSQRT(dtmp)
             ijob=2
             RETURN
         END IF
@@ -303,7 +303,7 @@
                 info=6
                 RETURN
             END IF
-            errnorm(j)=DSQRT(dtmp)
+            difnorm(j)=DSQRT(dtmp)
         END DO
     END IF
 !
@@ -372,14 +372,14 @@
 !
 !=======================================================================
     SUBROUTINE kep_summary(mmax,icnt,cmpt_time,&
-    &   si_1,si_2_l,si_2_r,si_3,egnval,res,errnorm,info)
+    &   si_1,si_2_l,si_2_r,si_3,egnval,resnorm,difnorm,info)
     IMPLICIT NONE
     INTEGER :: ounit,mmax,icnt,info
     REAL :: cmpt_time
-    DOUBLE PRECISION :: egnval,res,errnorm
+    DOUBLE PRECISION :: egnval,resnorm,difnorm
 !
     DIMENSION :: icnt(10),cmpt_time(10)
-    DIMENSION :: egnval(mmax),res(mmax),errnorm(mmax)
+    DIMENSION :: egnval(mmax),resnorm(mmax),difnorm(mmax)
 !
     TYPE shift_inertia
         DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:) :: shift
@@ -459,7 +459,7 @@
     &   'Relative residual 2-norm    ','Relative difference 2-norm    '
     DO i=1,icnt(3)
         WRITE(ounit,"(I8,2X,E28.18,2X,E28.18,2X,E28.18)") &
-        &   si_2_l%inertia(icnt(2))+i,egnval(i),res(i),errnorm(i)
+        &   si_2_l%inertia(icnt(2))+i,egnval(i),resnorm(i),difnorm(i)
     END DO
 !
     RETURN

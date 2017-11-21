@@ -33,4 +33,4 @@ LIBS = $(MUMPSFLAGS) $(METISFLAGS) $(PORDFLAGS) $(MPIFLAGS) $(LAPACKFLAGS) $(BLA
 # For MUMPS
 INCMPI = set_path_if_necessary_/MUMPS_5.0.1/libseq
 INCMUMPS = set_path_if_necessary_/MUMPS_5.0.1/include
-INCLUDE = -I. -I$(INCMPI) -I$(INCMUMPS)
+INCLUDES = -I. -I$(INCMPI) -I$(INCMUMPS)

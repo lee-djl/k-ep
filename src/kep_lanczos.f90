@@ -14,7 +14,6 @@
 !
     DIMENSION :: sub(IMAX-1)
     DIMENSION :: work(2*IMAX-2)
-    DIMENSION :: y(IMAX,IMAX)
 
     ALLOCATABLE :: seed
     DIMENSION :: seed(:)
@@ -90,7 +89,7 @@
 !           Eigenpair of tridiagonal matrix by LAPACK
             theta(1:j) = alpha(1:j)
             sub(1:j-1) = beta(1:j-1)
-            CALL dstev('V',j,theta,sub,y,imax,work,info)
+            CALL dstev('N',j,theta,sub,y,1,work,info)
             IF(info.NE.0) THEN
                 WRITE(6,*) 'Subroutine kep_lanczos: Error in LAPACK dstev routine'
                 WRITE(6,*) 'j =', j, ',  info =', info

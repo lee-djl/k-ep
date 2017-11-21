@@ -14,16 +14,16 @@ OBJECTS = \
  		../src/kep_utility.o \
  		./mmio.o \
  		./example_utility.o \
- 		-I./
+ 		-I../src
 
 mmio.o : mmio.f
-	$(FC) $(FFLAGS) $(INCLUDE) -c $< 
+	$(FC) $(FFLAGS) $(INCLUDES) -c $< -o $@
 
 example_utility.o : example_utility.f90 
-	$(FC) $(FFLAGS) $(INCLUDE) -c $< 
+	$(FC) $(FFLAGS) $(INCLUDES) -c $< -o $@
 
 example.out : example.f90
-	$(FC) $(FFLAGS) $(INCLUDE) $< -o $@ $(OBJECTS) $(LIBS)
+	$(FC) $(FFLAGS) $(INCLUDES) $< -o $@ $(OBJECTS) $(LIBS)
 
 .PHONY: clean
 clean:

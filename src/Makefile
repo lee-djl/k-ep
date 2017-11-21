@@ -9,8 +9,8 @@ all: $(TARGET)
 include ../Makefile.inc
 
 %.o : %.f90
-	$(FC) $(FFLAGS) $(INCLUDE) -c $< 
+	$(FC) $(FFLAGS) $(INCLUDES) -c $< -o $@
 
 .PHONY: clean
 clean:
-	rm -f $(TARGET)
+	rm -f $(TARGET) mod_kep.mod

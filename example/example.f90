@@ -1,5 +1,6 @@
     PROGRAM example
     USE mod_example_readmtx
+    USE mod_kep
     IMPLICIT NONE
 !---Input: matrices A and B in Matrix Market exchange (MTX) format
 !
@@ -19,9 +20,7 @@
 !
 !---Output: k-th eigenpair
 !
-    DOUBLE PRECISION :: keval,kevec
-    ALLOCATABLE :: kevec
-    DIMENSION :: kevec(:)
+    DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:) :: keval,kevec
 !
     INTEGER :: info
 !
@@ -56,8 +55,6 @@
 !
 !---Compute the k-th eigenpair------------------------------------------
 !
-    ALLOCATE(kevec(n))
-!
     CALL kep(n,&
     &   nz_a,indx_a,jndx_a,rval_a,&
     &   nz_b,indx_b,jndx_b,rval_b,&
@@ -74,7 +71,7 @@
 !-----------------------------------------------------------------------
 !
     DEALLOCATE(indx_a,jndx_a,rval_a,indx_b,jndx_b,rval_b)
-    DEALLOCATE(kevec)
+    DEALLOCATE(keval,kevec)
 !
     STOP
     END PROGRAM example
