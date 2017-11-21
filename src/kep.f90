@@ -123,11 +123,11 @@
     INTEGER :: imax_si,its_si,ijob_si,ijob_test,info_test
     DOUBLE PRECISION :: tol_res,tol_dif,                    &
     &   v_si,bv_si,alpha_si,beta_si,theta_si,               &
-    &   y,lngth,egnval,egnvec,egnvec_old,res,difnorm
+    &   y,lngth,egnval,egnvec,egnvec_old,resnorm,difnorm
     ALLOCATABLE :: v_si,bv_si,alpha_si,beta_si,theta_si,y,  &
-    &   egnval,egnvec,egnvec_old,res,difnorm
+    &   egnval,egnvec,egnvec_old,resnorm,difnorm
     DIMENSION :: alpha_si(:),theta_si(:),beta_si(:),        &
-    &   egnval(:),res(:),difnorm(:)
+    &   egnval(:),resnorm(:),difnorm(:)
     DIMENSION :: v_si(:,:),bv_si(:,:),y(:,:),egnvec(:,:),egnvec_old(:,:)
 !
 !   Time
@@ -190,7 +190,7 @@
     &   si_2_r%shift(0:imax_bi),si_2_r%inertia(0:imax_bi))
     ALLOCATE(si_3%shift(1),si_3%inertia(1))
     ALLOCATE(egnval(mmax),egnvec(n,mmax+2),                     &
-    &   egnvec_old(n,mmax),res(mmax),difnorm(mmax))
+    &   egnvec_old(n,mmax),resnorm(mmax),difnorm(mmax))
 !
 !   Convert data to Compressed Row Storage (CRS) format
     CALL kep_mtx2crs(n,nz_a,indx_a,jndx_a,rval_a,row_pntr_a,col_indx_a,a)
@@ -302,10 +302,10 @@
                 CALL mpi_finalize(ierr)
                 CALL kep_info(info)
                 IF(iprm(21).GE.0) CALL kep_summary(mmax,icnt,cmpt_time,&
-                &   si_1,si_2_l,si_2_r,si_3,egnval,res,difnorm,info)
+                &   si_1,si_2_l,si_2_r,si_3,egnval,resnorm,difnorm,info)
                 DEALLOCATE(si_1%shift,si_1%inertia,                         &
                 &   si_2_l%shift,si_2_l%inertia,si_2_r%shift,si_2_r%inertia,&
-                &   si_3%shift,si_3%inertia,egnval,res,difnorm,egnvec,egnvec_old)
+                &   si_3%shift,si_3%inertia,egnval,resnorm,difnorm,egnvec,egnvec_old)
                 RETURN
             END IF
         END IF
@@ -344,10 +344,10 @@
             CALL mpi_finalize(ierr)
             CALL kep_info(info)
             IF(iprm(21).GE.0) CALL kep_summary(mmax,icnt,cmpt_time,&
-            &   si_1,si_2_l,si_2_r,si_3,egnval,res,difnorm,info)
+            &   si_1,si_2_l,si_2_r,si_3,egnval,resnorm,difnorm,info)
             DEALLOCATE(si_1%shift,si_1%inertia,                         &
             &   si_2_l%shift,si_2_l%inertia,si_2_r%shift,si_2_r%inertia,&
-            &   si_3%shift,si_3%inertia,egnval,res,difnorm,egnvec,egnvec_old)
+            &   si_3%shift,si_3%inertia,egnval,resnorm,difnorm,egnvec,egnvec_old)
             RETURN
         END IF
 !
@@ -454,13 +454,13 @@
         CALL kep_convtest(n,imax_si,mmax,tol_res,tol_dif,i,j,&
         &   ijob_test,v_si,bv_si,beta_si,theta_si,&
         &   y,icnt(3),lngth,si_3%shift(1),&
-        &   egnval,egnvec,egnvec_old,res,difnorm,info_test)
+        &   egnval,egnvec,egnvec_old,resnorm,difnorm,info_test)
         DO j=1,icnt(3)
             IF(info_test.EQ.0) THEN
                 CALL kep_convtest(n,imax_si,mmax,tol_res,tol_dif,i,j,&
                 &   ijob_test,v_si,bv_si,beta_si,theta_si,&
                 &   y,icnt(3),lngth,si_3%shift(1),&
-                &   egnval,egnvec,egnvec_old,res,difnorm,info_test)
+                &   egnval,egnvec,egnvec_old,resnorm,difnorm,info_test)
                 CALL kep_matvec(n,nz_a,row_pntr_a,col_indx_a,a,&
                 &   egnvec(:,j),egnvec(:,mmax+1))
                 CALL kep_matvec(n,nz_b,row_pntr_b,col_indx_b,b,&
@@ -468,7 +468,7 @@
                 CALL kep_convtest(n,imax_si,mmax,tol_res,tol_dif,i,j,&
                 &   ijob_test,v_si,bv_si,beta_si,theta_si,&
                 &   y,icnt(3),lngth,si_3%shift(1),&
-                &   egnval,egnvec,egnvec_old,res,difnorm,info_test)
+                &   egnval,egnvec,egnvec_old,resnorm,difnorm,info_test)
             END IF
         END DO
         IF(info_test.EQ.0) THEN
@@ -476,7 +476,7 @@
             CALL kep_convtest(n,imax_si,mmax,tol_res,tol_dif,i,j,&
             &   ijob_test,v_si,bv_si,beta_si,theta_si,&
             &   y,icnt(3),lngth,si_3%shift(1),&
-            &   egnval,egnvec,egnvec_old,res,difnorm,info_test)
+            &   egnval,egnvec,egnvec_old,resnorm,difnorm,info_test)
         END IF
         CALL SYSTEM_CLOCK(clock_2,clock_rate,clock_max)
         cmpt_time(7)=cmpt_time(7)+REAL(clock_2-clock_1)/REAL(clock_rate)
@@ -494,10 +494,10 @@
             CALL mpi_finalize(ierr)
             CALL kep_info(info)
             IF(iprm(21).GE.0) CALL kep_summary(mmax,icnt,cmpt_time,&
-            &   si_1,si_2_l,si_2_r,si_3,egnval,res,difnorm,info)
+            &   si_1,si_2_l,si_2_r,si_3,egnval,resnorm,difnorm,info)
             DEALLOCATE(si_1%shift,si_1%inertia,                         &
             &   si_2_l%shift,si_2_l%inertia,si_2_r%shift,si_2_r%inertia,&
-            &   si_3%shift,si_3%inertia,egnval,res,difnorm,egnvec,egnvec_old)
+            &   si_3%shift,si_3%inertia,egnval,resnorm,difnorm,egnvec,egnvec_old)
             RETURN
         ELSE IF(info_test.GE.3) THEN
             egnvec_old(:,1:icnt(3))=egnvec(:,1:icnt(3))
@@ -520,10 +520,10 @@
 !---Time and results----------------------------------------------------
 !
     IF(iprm(21).GE.0) CALL kep_summary(mmax,icnt,cmpt_time,&
-        &   si_1,si_2_l,si_2_r,si_3,egnval,res,difnorm,info)
+        &   si_1,si_2_l,si_2_r,si_3,egnval,resnorm,difnorm,info)
     DEALLOCATE(si_1%shift,si_1%inertia,                         &
     &   si_2_l%shift,si_2_l%inertia,si_2_r%shift,si_2_r%inertia,&
-    &   si_3%shift,si_3%inertia,egnval,res,difnorm,egnvec,egnvec_old)
+    &   si_3%shift,si_3%inertia,egnval,resnorm,difnorm,egnvec,egnvec_old)
 !
 !-----------------------------------------------------------------------
 !
