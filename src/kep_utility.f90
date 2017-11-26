@@ -381,7 +381,8 @@
     DIMENSION :: icnt(10),cmpt_time(10)
     DIMENSION :: egnval(mmax),resnorm(mmax),difnorm(mmax)
 !
-    TYPE shift_inertia
+    TYPE :: shift_inertia
+        SEQUENCE
         DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:) :: shift
         INTEGER, ALLOCATABLE, DIMENSION(:) :: inertia
     END TYPE shift_inertia
@@ -474,19 +475,19 @@
 !-----------------------------------------------------------------------
 !
     IF((k.LE.1).OR.(k.GE.n)) THEN
-        info=-1
+        info=-11
     ELSE IF((iprm(1).LT.1).OR.(iprm(1).GE.n)) THEN
-        info=-2
+        info=-12
     ELSE IF((iprm(2).LT.1).OR.(iprm(2).GT.16)) THEN
-        info=-3
+        info=-13
     ELSE IF((iprm(3).LT.1).OR.(iprm(3).GT.16)) THEN
-        info=-4
+        info=-14
     ELSE IF((iprm(11).LT.2).OR.(iprm(11).GT.n)) THEN
-        info=-5
+        info=-15
     ELSE IF((iprm(12).LT.0).OR.(iprm(12).GT.64)) THEN
-        info=-6
+        info=-16
     ELSE IF((iprm(13).LT.iprm(1)).OR.(iprm(13).GT.n)) THEN
-        info=-7
+        info=-17
     END IF
 !
 !-----------------------------------------------------------------------
@@ -502,18 +503,20 @@
 !
     WRITE(6,*)
     IF(info.EQ.-1) THEN
+        WRITE(6,*)'=====kep info',info,': Allocate matrices'    
+    ELSE IF(info.EQ.-11) THEN
         WRITE(6,*)'=====kep info',info,': k must satisfy 1 < k < n'
-    ELSE IF(info.EQ.-2) THEN
+    ELSE IF(info.EQ.-12) THEN
         WRITE(6,*)'=====kep info',info,': iprm(1) must satisfy 1 <= iprm(1) < n'
-    ELSE IF(info.EQ.-3) THEN
+    ELSE IF(info.EQ.-13) THEN
         WRITE(6,*)'=====kep info',info,': iprm(2) must satisfy 1 <= iprm(2) <= 16'
-    ELSE IF(info.EQ.-4) THEN
+    ELSE IF(info.EQ.-14) THEN
         WRITE(6,*)'=====kep info',info,': iprm(3) must satisfy 1 <= iprm(3) <= 16'
-    ELSE IF(info.EQ.-5) THEN
+    ELSE IF(info.EQ.-15) THEN
         WRITE(6,*)'=====kep info',info,': iprm(11) must satisfy 2 <= iprm(11) <= n'
-    ELSE IF(info.EQ.-6) THEN
+    ELSE IF(info.EQ.-16) THEN
         WRITE(6,*)'=====kep info',info,': iprm(12) must satisfy 0 <= iprm(12) <= 64'
-    ELSE IF(info.EQ.-7) THEN
+    ELSE IF(info.EQ.-17) THEN
         WRITE(6,*)'=====kep info',info,': iprm(13) must satisfy iprm(1) <= iprm(13) <= n'
     ELSE IF(info.EQ.1) THEN
         WRITE(6,*)'=====kep info',info,': Failed to set an initial interval'
@@ -528,3 +531,4 @@
 !-----------------------------------------------------------------------
     RETURN
     END SUBROUTINE kep_info
+

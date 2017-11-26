@@ -1,0 +1,10 @@
+	TYPE :: kep_struct
+		SEQUENCE
+		INTEGER :: n,nz_a,nz_b,k,info
+		INTEGER,DIMENSION(31) :: iprm
+		INTEGER,ALLOCATABLE,DIMENSION(:) :: indx_a,jndx_a,indx_b,jndx_b
+		DOUBLE PRECISION,ALLOCATABLE,DIMENSION(:) :: rval_a,rval_b
+		DOUBLE PRECISION,ALLOCATABLE,DIMENSION(:) :: kval
+		DOUBLE PRECISION,ALLOCATABLE,DIMENSION(:,:) :: kvec
+		INTEGER,ALLOCATABLE,DIMENSION(:) :: kndx
+	END TYPE kep_struct

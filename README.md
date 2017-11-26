@@ -43,12 +43,13 @@ tar zxf ELSES_MATRIX_APF4686_*
 ./ELSES_MATRIX_APF4686_20170505/ELSES_MATRIX_APF4686_B.mtx > output.txt
 ```
 
-3. Check results `output.txt` and `evec00002343.txt` in `example` directory.
+3. Check results `output.txt`, `eval00002343.txt`, and `evec00002343.txt` in `example` directory.
 
-   * `output.txt` shows some implementation details of the program. 
-   * `evec00002343.txt` contains elements of the k-th eigenvector (k = 2343) normalized with respect to 2-norm.
+   * `output.txt` shows some implementation details of the program.
+   * `eval00002343.txt` contains the index and value of the k-th eigenvalue (k = 2343).
+   * `evec00002343.txt` contains elements of the k-th eigenvector normalized with respect to 2-norm.
    
-   Compare the results with samples [s_output.txt](/example/s_output.txt) and [s_evec00002343.txt](/example/s_evec00002343.txt) in the same directory.  
+   Compare the results with samples [s_output.txt](/example/s_output.txt), [s_eval00002343.txt](/example/s_eval00002343.txt), and [s_evec00002343.txt](/example/s_evec00002343.txt) in the same directory.  
    Note that the contents of the results may differ from those of the samples depending on computational environment.
 
 ## Acknowledgement

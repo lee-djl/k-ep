@@ -5,11 +5,11 @@
     m_1%job=-1
     CALL dmumps(m_1)
 
-    m_1%n=n
-    m_1%nz=nz_b
+    m_1%n=kep_io%n
+    m_1%nz=kep_io%nz_b
 
-    ALLOCATE(m_1%irn(m_1%nz),m_1%jcn(m_1%nz),m_1%a(m_1%nz),m_1%rhs(n))
-    ALLOCATE(m_ord(n))
+    ALLOCATE(m_1%irn(m_1%nz),m_1%jcn(m_1%nz),m_1%a(m_1%nz),m_1%rhs(m_1%n))
+    ALLOCATE(m_ord(m_1%n))
     m_1%jcn=col_indx_b
     m_1%a=b
 
@@ -17,7 +17,7 @@
         m_1%irn(i)=m_1%jcn(i)
     END DO
 
-    DO i=2,n
+    DO i=2,kep_io%n
         DO j=row_pntr_b(i),row_pntr_b(i+1)-1
         m_1%irn(j)=i
         END DO

@@ -1,9 +1,9 @@
     MODULE mod_example_readmtx
     CONTAINS
-    SUBROUTINE example_readmtx(ipath,iunit,n,nz,indx,jndx,rval)
+    SUBROUTINE example_readmtx(ipath,n,nz,indx,jndx,rval)
     IMPLICIT NONE
     CHARACTER(256) :: ipath
-    INTEGER :: iunit,n,nz
+    INTEGER :: n,nz
     INTEGER, ALLOCATABLE, DIMENSION(:) :: indx,jndx
     DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:) :: rval
 !
@@ -11,7 +11,7 @@
     CHARACTER(10) :: rep
     CHARACTER(19) :: symm
 !
-    INTEGER :: nz_mx,itmp,ival
+    INTEGER :: iunit=999,nz_mx,itmp,ival
     COMPLEX :: cval
 !
     ALLOCATABLE :: ival,cval
@@ -34,25 +34,59 @@
     END MODULE mod_example_readmtx
 !
 !=======================================================================
-    SUBROUTINE example_writekevec(opath,ounit,n,kevec)
+    SUBROUTINE example_writekval(n,kndx,kval)
     IMPLICIT NONE
+    INTEGER :: n
+    INTEGER,DIMENSION(n) :: kndx
+    DOUBLE PRECISION,DIMENSION(n) :: kval
+!   
     CHARACTER(256) :: opath
-    INTEGER :: ounit,n
-    DOUBLE PRECISION :: kevec
-    DIMENSION :: kevec(n)
-!
-    INTEGER :: i
+    INTEGER :: ounit=888,i
 !
 !-----------------------------------------------------------------------
 !
+    IF(n.EQ.1) THEN
+        WRITE(opath,"(A6,I0.8,A4)") './eval',kndx(1),'.txt'
+    ELSE
+        WRITE(opath,"(A6,I0.8,A2,I0.8,A4)") &
+            & './eval',kndx(1),'to', kndx(n),'.txt'        
+    END IF
+!   
     OPEN(UNIT=ounit,FILE=TRIM(opath),STATUS='REPLACE',&
     &   ACCESS='SEQUENTIAL',ACTION='WRITE')
 !
     DO i=1,n
-        WRITE(ounit,"(E28.18)") kevec(i)
+        WRITE(ounit,"(I8,2X,E28.18)") kndx(i),kval(i)
     END DO
 !
     CLOSE(ounit)
     RETURN
-    END SUBROUTINE example_writekevec
+    END SUBROUTINE example_writekval    
+!  
+!=======================================================================
+    SUBROUTINE example_writekvec(m,n,kndx,kvec)
+    IMPLICIT NONE
+    INTEGER :: m,n
+    INTEGER,DIMENSION(n) :: kndx
+    DOUBLE PRECISION,DIMENSION(m,n) :: kvec
+!   
+    CHARACTER(256) :: opath
+    INTEGER :: ounit=777,i,j
+!
+!-----------------------------------------------------------------------
+!
+    DO j=1,n
+        WRITE(opath,"(A6,I0.8,A4)") './evec',kndx(j),'.txt'
+        OPEN(UNIT=ounit,FILE=TRIM(opath),STATUS='REPLACE',&
+            &   ACCESS='SEQUENTIAL',ACTION='WRITE')
+!        
+        DO i=1,m
+            WRITE(ounit,"(E28.18)") kvec(i,j)
+        END DO
+!
+        CLOSE(ounit)    
+    END DO        
+!
+    RETURN
+    END SUBROUTINE example_writekvec
     

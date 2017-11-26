@@ -5,31 +5,31 @@
     m_3%job=-1
     CALL dmumps(m_3)
 
-    m_3%n=n
-    m_3%nz=nz_a+nz_b
+    m_3%n=kep_io%n
+    m_3%nz=kep_io%nz_a+kep_io%nz_b
 
-    ALLOCATE(m_3%irn(m_3%nz),m_3%jcn(m_3%nz),m_3%a(m_3%nz),m_3%rhs(n))
-    ALLOCATE(m_3%perm_in(n))    
-    m_3%jcn(1:nz_a)=col_indx_a
-    m_3%jcn(nz_a+1:nz_a+nz_b)=col_indx_b
+    ALLOCATE(m_3%irn(m_3%nz),m_3%jcn(m_3%nz),m_3%a(m_3%nz),m_3%rhs(m_3%n))
+    ALLOCATE(m_3%perm_in(m_3%n))    
+    m_3%jcn(1:kep_io%nz_a)=col_indx_a
+    m_3%jcn(kep_io%nz_a+1:kep_io%nz_a+kep_io%nz_b)=col_indx_b
 
     DO i=1,row_pntr_a(1)-1
         m_3%irn(i)=m_3%jcn(i)
     END DO
 
-    DO i=2,n
+    DO i=2,kep_io%n
         DO j=row_pntr_a(i),row_pntr_a(i+1)-1
         m_3%irn(j)=i
         END DO
     END DO
     
     DO i=1,row_pntr_b(1)-1
-        m_3%irn(nz_a+i)=m_3%jcn(i)
+        m_3%irn(kep_io%nz_a+i)=m_3%jcn(i)
     END DO
 
-    DO i=2,n
+    DO i=2,kep_io%n
         DO j=row_pntr_b(i),row_pntr_b(i+1)-1
-        m_3%irn(nz_a+j)=i
+        m_3%irn(kep_io%nz_a+j)=i
         END DO
     END DO    
   
