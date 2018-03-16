@@ -66,6 +66,27 @@
     END SUBROUTINE kep_mtx2crs
 !
 !=======================================================================
+    SUBROUTINE kep_randnum(seed,size,randarray)
+    USE xorshift128plus
+    IMPLICIT NONE
+    INTEGER :: seed,size
+    DOUBLE PRECISION :: randarray
+    DIMENSION :: randarray(size)
+!
+    INTEGER :: i
+!
+!-----------------------------------------------------------------------
+!
+    CALL rand_init(seed)
+!
+    DO i=1,size
+        randarray(i)=rand_uniform()
+    END DO
+! 
+    RETURN
+    END SUBROUTINE kep_randnum
+!    
+!=======================================================================
     SUBROUTINE kep_matvec(n,nz,row_pntr,col_indx,a,x,y)
     IMPLICIT NONE
     INTEGER :: n,nz,row_pntr,col_indx
@@ -469,8 +490,8 @@
 !=======================================================================
     SUBROUTINE kep_checkprm(n,k,iprm,info)
     IMPLICIT NONE
-    INTEGER :: n,k,iprm,info
-    DIMENSION :: iprm(30)
+    INTEGER :: n,k,info
+    INTEGER,DIMENSION(31) :: iprm
 !
 !-----------------------------------------------------------------------
 !

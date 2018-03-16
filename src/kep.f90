@@ -42,7 +42,7 @@
 !             target index.
 !             Required to satisfy 1 < k < n
 !
-!   iprm    : <INPUT, INTEGER array, DIMENSION(30)>
+!   iprm    : <INPUT, INTEGER array, DIMENSION(31)>
 !             parameters for SUBROUTINE kep
 !   iprm(1) : stopping criterion for bisection
 !             ( = maximum number of eigenpairs computed together).

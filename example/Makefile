@@ -11,6 +11,7 @@ OBJECTS = \
 		../src/kep.o \
  		../src/kep_lanczos.o  \
 		../src/kep_silanczos.o \
+ 		../src/xorshift128plus.o \
  		../src/kep_utility.o \
  		./mmio.o \
  		./example_utility.o \

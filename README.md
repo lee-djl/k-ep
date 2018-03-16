@@ -40,7 +40,7 @@ tar zxf ELSES_MATRIX_APF4686_*
 2. Execute the example program `example.out` in `example` directory.  
 ```
 ./example.out ./ELSES_MATRIX_APF4686_20170505/ELSES_MATRIX_APF4686_A.mtx \
-./ELSES_MATRIX_APF4686_20170505/ELSES_MATRIX_APF4686_B.mtx > output.txt
+./ELSES_MATRIX_APF4686_20170505/ELSES_MATRIX_APF4686_B.mtx 2343 > output.txt
 ```
 
 3. Check results `output.txt`, `eval00002343.txt`, and `evec00002343.txt` in `example` directory.

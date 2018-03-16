@@ -13,17 +13,39 @@
     INCLUDE 'kep_struct.h'
     TYPE(kep_struct) :: kep_io
 !
+!   Temporary
+    CHARACTER(10)  :: ctemp
+!
 !---Read matrices A and B (MTX format)----------------------------------
 !
 !   Read A from file
-    CALL getarg(1,ipath_a)
+    CALL GETARG(1,ipath_a) ! Provide the path as a command line argument
     CALL example_readmtx(ipath_a,n,nz_a,indx_a,jndx_a,rval_a)
 !
 !   Read B from file
-    CALL getarg(2,ipath_b)
-    CALL example_readmtx(ipath_b,n,nz_b,indx_b,jndx_b,rval_b)
+    CALL GETARG(2,ipath_b) ! Provide the path as a command line argument
+    CALL example_readmtx(ipath_b,n,nz_b,indx_b,jndx_b,rval_b) 
+!
+!---Read the target index k---------------------------------------------
+!
+    CALL GETARG(3,ctemp)
+    READ(ctemp,*) kep_io%k ! Provide the value as a command line argument 
+!
+!---Set parameters for kep----------------------------------------------
+!
+    kep_io%iprm(1) =20  ! stopping criterion for bisection
+                        ! (=maximum number of eigenpairs computed together)
+    kep_io%iprm(2) =10  ! 10**-iprm(2)=tolerance for relative residual 2-norm
+    kep_io%iprm(3) =10  ! 10**-iprm(3)=tolerance for relative difference 2-norm
+    kep_io%iprm(11)=30  ! maximum iteration count for Lanczos
+    kep_io%iprm(12)=30  ! maximum iteration count for Bisection
+    kep_io%iprm(13)=300 ! maximum iteration count for shift-and-invert Lanczos
+!
+    kep_io%iprm(21)=1   ! If iprm(21) > 0, print details of computation to terminal
+    kep_io%iprm(22)=0   ! If iprm(22) =< 0, output only the k-th eigenpair.
+                        ! Otherwise, output all computed eigenpairs    
 !    
-!===Assign values of A and B for kep====================================    
+!---Assign values of A and B for kep------------------------------------    
 !    
 !   Assign values of A
     kep_io%n=n              ! matrix size
@@ -44,22 +66,6 @@
     kep_io%jndx_b=jndx_b    ! columns index of B
     kep_io%rval_b=rval_b    ! value of B
 !
-!---Set parameters for kep----------------------------------------------
-!
-    kep_io%k       =2343! target index
-!
-    kep_io%iprm(1) =20  ! stopping criterion for bisection
-                        ! (=maximum number of eigenpairs computed together)
-    kep_io%iprm(2) =10  ! 10**-iprm(2)=tolerance for relative residual 2-norm
-    kep_io%iprm(3) =10  ! 10**-iprm(3)=tolerance for relative difference 2-norm
-    kep_io%iprm(11)=30  ! maximum iteration count for Lanczos
-    kep_io%iprm(12)=30  ! maximum iteration count for Bisection
-    kep_io%iprm(13)=300 ! maximum iteration count for shift-and-invert Lanczos
-!
-    kep_io%iprm(21)=1   ! If iprm(21) > 0, print details of computation to terminal
-    kep_io%iprm(22)=0   ! If iprm(22) =< 0, output only the k-th eigenpair.
-                        ! Otherwise, output all computed eigenpairs    
-!
 !---Compute the k-th eigenpair------------------------------------------
 !
     CALL kep(kep_io)
@@ -77,7 +83,7 @@
             & kep_io%n,SIZE(kep_io%kndx),kep_io%kndx,kep_io%kvec)
     END IF
 !
-!=======================================================================
+!-----------------------------------------------------------------------
 !
     DEALLOCATE(indx_a,jndx_a,rval_a,indx_b,jndx_b,rval_b)    
     DEALLOCATE(kep_io%indx_a,kep_io%jndx_a,kep_io%rval_a)

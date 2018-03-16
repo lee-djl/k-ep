@@ -9,14 +9,11 @@
     DIMENSION :: bv(n,0:imax+1)
 !
 !   Local arguments
-    INTEGER :: i,j,k,info,seed_sz,seed
+    INTEGER :: i,j,k,info,seed
     DOUBLE PRECISION :: dtmp,sub,y,work
 !
     DIMENSION :: sub(IMAX-1)
     DIMENSION :: work(2*IMAX-2)
-
-    ALLOCATABLE :: seed
-    DIMENSION :: seed(:)
 !
 !-----------------------------------------------------------------------
 !   Initialize
@@ -24,13 +21,9 @@
         IF(ijob.EQ.1) THEN
             bv(:,0) = 0.0D0
 !           v(1):=random vector
-            CALL RANDOM_SEED(SIZE=seed_sz)
-            ALLOCATE(seed(seed_sz))
             seed=1
-            CALL RANDOM_SEED(PUT=seed)
-            CALL RANDOM_NUMBER(v(:,1))
+            CALL kep_randnum(seed,n,v(:,1))
             v(:,1)=v(:,1)*2.0D0-1.0D0
-            DEALLOCATE(seed)
 !           Return to the caller for matvec bv(1):=B*v(1) >>>>>>>>>>>>>>
             ijob=2
             RETURN
