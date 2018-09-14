@@ -58,4 +58,4 @@ Matrix data used in the example program are achieved from [ELSES Matrix Library]
 
 ## References
 
-D. Lee, T. Hoshi, T. Sogabe, Y. Miyatake, S.-L. Zhang, [Solution of the k-th eigenvalue problem in large-scale electronic structure calculations](http://arxiv.org/abs/1710.05134), submitted.
+D. Lee, T. Hoshi, T. Sogabe, Y. Miyatake, S.-L. Zhang, Solution of the k-th eigenvalue problem in large-scale electronic structure calculations, J. Comput. Phys., 371 (2018), 618-632. ([Journal](https://doi.org/10.1016/j.jcp.2018.06.002), [Preprint](https://arxiv.org/abs/1710.05134))
