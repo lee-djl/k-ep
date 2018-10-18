@@ -41,7 +41,7 @@
 !
 !   Initialize sparse solver
     CALL SYSTEM_CLOCK(clock_1,clock_rate,clock_max)
-    CALL k2l_ldl_initialize(k2l_io,k2l_factor,0.0D0)
+    CALL k2l_ldl_initialize(k2l_io,k2l_factor,0.0D0,.TRUE.)
     CALL SYSTEM_CLOCK(clock_2,clock_rate,clock_max)
     k2l_int%cmpt_time(1)=k2l_int%cmpt_time(1)+REAL(clock_2-clock_1)/REAL(clock_rate)    
 !
@@ -139,6 +139,7 @@
                 k2l_int%icnt(1)=i
                 IF(i.NE.1) THEN
                     IF(k2l_int%inertia_1_upper(i).GE.k2l_io%k_upper) THEN
+                        CALL k2l_ldl_finalize(k2l_io,k2l_factor_B)
                         EXIT
                     ELSE IF(i.EQ.imax_l) THEN
     !                   Failed to find an initial interval
@@ -181,11 +182,12 @@
                 k2l_int%icnt(1)=i
                 IF(i.NE.1) THEN
                     IF(k2l_int%inertia_1_lower(i).LT.k2l_io%k_lower) THEN
+                        CALL k2l_ldl_finalize(k2l_io,k2l_factor_B)
                         EXIT
                     ELSE IF(i.EQ.imax_l) THEN
     !                   Failed to find an initial interval
                         CALL k2l_ldl_finalize(k2l_io,k2l_factor)
-                        CALL k2l_ldl_finalize(k2l_io,k2l_factor_B)                                            
+                        CALL k2l_ldl_finalize(k2l_io,k2l_factor_B)
                         k2l_io%info=1
                         IF(TRIM(ADJUSTL(k2l_io%cprm(1))).EQ.'print') CALL k2l_summary(k2l_io,k2l_int)
                         CALL k2l_info(k2l_io%info)
@@ -227,6 +229,7 @@
                 IF(i.NE.1) THEN
                     IF((k2l_int%inertia_1_lower(1).LT.k2l_io%k_lower).AND.&
                     &   (k2l_int%inertia_1_upper(1).GE.k2l_io%k_upper)) THEN
+                        CALL k2l_ldl_finalize(k2l_io,k2l_factor_B)
                         EXIT
                     ELSE IF(i.EQ.imax_l) THEN
     !                   Failed to find an initial interval                        
@@ -283,6 +286,7 @@
         k2l_int%icnt(2)=i-1
         k2l_int%icnt(3)=k2l_int%inertia_2_upper(i-1)-k2l_int%inertia_2_lower(i-1)
         IF(k2l_int%icnt(3).LE.mmax_b) THEN
+            CALL k2l_ldl_finalize(k2l_io,k2l_factor)
             EXIT
         ELSE IF(i-1.EQ.imax_b) THEN
 !           Failed to narrow down an interval
@@ -399,6 +403,12 @@
     ALLOCATE(k2l_c%egnval(k2l_c%mmax),k2l_c%resnorm(k2l_c%mmax),k2l_c%difnorm(k2l_c%mmax), &
     &   k2l_c%egnvec(k2l_io%n,k2l_c%mmax+2),k2l_c%egnvec_old(k2l_io%n,k2l_c%mmax))
     k2l_c%egnvec_old=0.0D0
+!
+!   Initialize sparse solver
+    CALL SYSTEM_CLOCK(clock_1,clock_rate,clock_max)
+    CALL k2l_ldl_initialize(k2l_io,k2l_factor,0.0D0,.FALSE.)
+    CALL SYSTEM_CLOCK(clock_2,clock_rate,clock_max)
+    k2l_int%cmpt_time(6)=k2l_int%cmpt_time(6)+REAL(clock_2-clock_1)/REAL(clock_rate)
 !----------------------------------------------------------------------- 
 !   Factorize matrix A-sigma*B
     CALL SYSTEM_CLOCK(clock_1,clock_rate,clock_max)
@@ -445,6 +455,7 @@
 !
         k2l_int%icnt(4)=i
         IF(k2l_c%info.EQ.0) THEN
+            CALL k2l_ldl_finalize(k2l_io,k2l_factor)
             EXIT
         ELSE IF(i.EQ.imax_s) THEN
 !           Failed to be converged
@@ -473,8 +484,7 @@
     &   k2l_io%k_upper-k2l_int%inertia_2_lower(k2l_int%icnt(2)))
     k2l_io%kvec=k2l_c%egnvec(:,k2l_io%k_lower-k2l_int%inertia_2_lower(k2l_int%icnt(2)): &
     &   k2l_io%k_upper-k2l_int%inertia_2_lower(k2l_int%icnt(2)))
-!    
-    CALL k2l_ldl_finalize(k2l_io,k2l_factor)
+!   
     IF(TRIM(ADJUSTL(k2l_io%cprm(1))).EQ.'print') CALL k2l_summary(k2l_io,k2l_int,k2l_c)
 !
     RETURN

@@ -8,6 +8,7 @@
     IMPLICIT NONE
 !---Temporary variables to read command line arguments
     CHARACTER(256), DIMENSION(10) :: cla
+    INTEGER, INTRINSIC :: iargc
 !
 !---Input matrices A and B in coordinate format
     CHARACTER(256)  ::  &

@@ -4,15 +4,16 @@
     USE k2l_utility
     CONTAINS
 !=======================================================================
-    SUBROUTINE k2l_ldl_initialize(k2l_io,k2l_factor,shift)
+    SUBROUTINE k2l_ldl_initialize(k2l_io,k2l_factor,shift,discardfactor)
     IMPLICIT NONE
     TYPE(k2l_io_type), INTENT(INOUT) :: k2l_io
     TYPE(k2l_factor_type), INTENT(OUT) :: k2l_factor
     DOUBLE PRECISION, INTENT(IN),OPTIONAL :: shift
+    LOGICAL, INTENT(IN),OPTIONAL :: discardfactor
 !
     SELECT CASE(TRIM(ADJUSTL(k2l_io%cprm(4))))
     CASE('dmumps')
-        CALL k2l_ldl_initialize_dmumps(k2l_io,k2l_factor,shift)
+        CALL k2l_ldl_initialize_dmumps(k2l_io,k2l_factor,shift,discardfactor)
     ! CASE('any_other_sparsesolver')
     !     CALL any_other_sparsesolver
     END SELECT
@@ -20,11 +21,12 @@
     RETURN
     END SUBROUTINE k2l_ldl_initialize
 !=======================================================================
-    SUBROUTINE k2l_ldl_initialize_dmumps(k2l_io,k2l_factor,shift)
+    SUBROUTINE k2l_ldl_initialize_dmumps(k2l_io,k2l_factor,shift,discardfactor)
     IMPLICIT NONE
     TYPE(k2l_io_type), INTENT(INOUT) :: k2l_io
     TYPE(k2l_factor_type), INTENT(OUT) :: k2l_factor
     DOUBLE PRECISION, INTENT(IN),OPTIONAL :: shift
+    LOGICAL, INTENT(IN),OPTIONAL :: discardfactor
 !
 !   For dMUMPS
     INCLUDE 'mpif.h'
@@ -58,7 +60,7 @@
     k2l_factor%dmumps%icntl(12)=1  ! usual ordering
     k2l_factor%dmumps%icntl(13)=1  ! parallelism for root node (MULTIFRONTAL node): NO,
                                    ! This parameter should NOT be changed.
-    k2l_factor%dmumps%icntl(14)=50 ! extra working memory: 50% increase
+    k2l_factor%dmumps%icntl(14)=20 ! extra working memory: 20% increase
     k2l_factor%dmumps%icntl(18)=0  ! distribution of input matrix: centralized on host processor
     k2l_factor%dmumps%icntl(22)=0  ! in-core factorization
     k2l_factor%dmumps%icntl(28)=1  ! parallelism for fill-reducing ordering: no,
@@ -66,8 +68,13 @@
                                    ! In case of using ParMETIS, set to icntl(28)=2
     k2l_factor%dmumps%icntl(29)=2  ! parallel fill-reducing ordering: ParMETIS
                                    ! This parameter is ignored when icntl(28)=1.
-    k2l_factor%dmumps%icntl(31)=0  ! keep factored matrix
-                                   ! This parameter should NOT be changed.
+    IF(PRESENT(discardfactor).AND.(discardfactor.EQ..TRUE.)) THEN
+        k2l_factor%dmumps%icntl(31)=1   ! discard factored matrix
+                                        ! This parameter should NOT be changed.
+    ELSE
+        k2l_factor%dmumps%icntl(31)=0   ! keep factored matrix
+                                        ! This parameter should NOT be changed.
+    END IF
 !
     CALL mpi_comm_rank(k2l_factor%dmumps%comm,rank,ierr)
     IF(rank.EQ.0) THEN

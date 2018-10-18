@@ -213,14 +213,14 @@
     DO i=1,10
         rtmp=rtmp+k2l_int%cmpt_time(i)
     END DO
-    WRITE(ounit,"(A39,F15.7,/)") 'Overall                               :',rtmp
-    WRITE(ounit,"(A39,F15.7)") 'Step 1 Task (i)   symbolic factor. B  :',k2l_int%cmpt_time(1)
-    WRITE(ounit,"(A39,F15.7)") 'Step 1 Task (ii)  numer. factor. B    :',k2l_int%cmpt_time(2)
-    WRITE(ounit,"(A39,F15.7)") 'Step 1 Task (iii) Lanczos             :',k2l_int%cmpt_time(3)
-    WRITE(ounit,"(A39,F15.7)") 'Step 1 Task (iv)  inertia computation :',k2l_int%cmpt_time(4)
-    WRITE(ounit,"(A39,F15.7)") 'Step 2 Task (v)   inertia computation :',k2l_int%cmpt_time(5)
-    WRITE(ounit,"(A39,F15.7)") 'Step 3 Task (vi)  numer. factor. A-sB :',k2l_int%cmpt_time(6)
-    WRITE(ounit,"(A39,F15.7,/)") 'Step 3 Task (vii) SI Lanczos          :',k2l_int%cmpt_time(7)
+    WRITE(ounit,"(A50,F15.7,/)") 'Overall                                          :',rtmp
+    WRITE(ounit,"(A50,F15.7)") 'Step 1 Task (i)   symbolic factor. A-sB          :',k2l_int%cmpt_time(1)
+    WRITE(ounit,"(A50,F15.7)") 'Step 1 Task (ii)  symbolic & numer. factor. B    :',k2l_int%cmpt_time(2)
+    WRITE(ounit,"(A50,F15.7)") 'Step 1 Task (iii) Lanczos                        :',k2l_int%cmpt_time(3)
+    WRITE(ounit,"(A50,F15.7)") 'Step 1 Task (iv)  inertia computation            :',k2l_int%cmpt_time(4)
+    WRITE(ounit,"(A50,F15.7)") 'Step 2 Task (v)   inertia computation            :',k2l_int%cmpt_time(5)
+    WRITE(ounit,"(A50,F15.7)") 'Step 3 Task (vi)  symbolic & numer. factor. A-sB :',k2l_int%cmpt_time(6)    
+    WRITE(ounit,"(A50,F15.7,/)") 'Step 3 Task (vii) SI Lanczos                     :',k2l_int%cmpt_time(7)
 !
     WRITE(ounit,*)'-----Iteration count'
     WRITE(ounit,"(A8,I4)") 'Step 1 :',k2l_int%icnt(1)

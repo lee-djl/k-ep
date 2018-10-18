@@ -10,7 +10,8 @@
     IMPLICIT NONE    
     TYPE(k2l_io_type) :: k2l_io         ! Input/Output variables
     TYPE(k2l_int_type) :: k2l_int       ! Internal variables
-    TYPE(k2l_factor_type) :: k2l_factor ! Internal LDL factors
+    TYPE(k2l_factor_type) :: &
+    &   k2l_factor_12, k2l_factor_3     ! Internal LDL factors
 !-----------------------------------------------------------------------
     IF(k2l_io%job.EQ.0) THEN
 !       Assign default values to parameters
@@ -25,13 +26,13 @@
         CALL k2l_initialize_internal(k2l_io,k2l_int)
 !-----------------------------------------------------------------------    
 !       1st Stage: Set an intial interval    
-        CALL k2l_setinterval(k2l_io,k2l_int,k2l_factor)
+        CALL k2l_setinterval(k2l_io,k2l_int,k2l_factor_12)
 !    
 !       2nd Stage: Narrow down the interval    
-        CALL k2l_narrowinterval(k2l_io,k2l_int,k2l_factor)
+        CALL k2l_narrowinterval(k2l_io,k2l_int,k2l_factor_12)
 !    
 !       3rd Stage: Compute eigenpairs in the interval    
-        CALL k2l_pair(k2l_io,k2l_int,k2l_factor)
+        CALL k2l_pair(k2l_io,k2l_int,k2l_factor_3)
 !
 !       Optional: Compute inverse participation ratio
 !       for electronic structure calculations
