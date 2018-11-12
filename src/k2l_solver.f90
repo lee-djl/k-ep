@@ -251,7 +251,7 @@
     IMPLICIT NONE
     TYPE(k2l_io_type), INTENT(INOUT) :: k2l_io
     TYPE(k2l_factor_type), INTENT(INOUT) :: k2l_factor
-    DOUBLE PRECISION, DIMENSION(k2l_io%n), INTENT(INOUT) :: x,y
+    DOUBLE PRECISION, DIMENSION(:), INTENT(INOUT) :: x,y
     !
     SELECT CASE(TRIM(ADJUSTL(k2l_io%cprm(4))))
     CASE('dmumps')
@@ -267,9 +267,14 @@
     IMPLICIT NONE
     TYPE(k2l_io_type), INTENT(INOUT) :: k2l_io
     TYPE(k2l_factor_type), INTENT(INOUT) :: k2l_factor
-    DOUBLE PRECISION, DIMENSION(k2l_io%n), INTENT(INOUT) :: x,y
+    DOUBLE PRECISION, DIMENSION(:), INTENT(INOUT) :: x,y
 !
     INTEGER :: rank,ierr,i
+!
+    IF((k2l_io%n.NE.SIZE(x)).OR.(k2l_io%n.NE.SIZE(y))) THEN
+        WRITE(*,*) 'Incompatible array size'
+        STOP
+    END IF
 !
 !   Set parameters for dMUMPS
     k2l_factor%dmumps%icntl(10)=1   ! iterative refinement
@@ -376,7 +381,7 @@
     IMPLICIT NONE
     CHARACTER(*) :: selectmatrix
     TYPE(k2l_int_type), INTENT(IN) :: k2l_int
-    DOUBLE PRECISION,DIMENSION(SIZE(k2l_int%row_pntr_a)-1) :: x,y
+    DOUBLE PRECISION,DIMENSION(:) :: x,y
 !-----------------------------------------------------------------------
     SELECT CASE(selectmatrix)
     CASE('A')
@@ -394,15 +399,18 @@
 !=======================================================================
     SUBROUTINE k2l_matvec2(n,nz,row_pntr,col_indx,a,x,y)
     IMPLICIT NONE
-    INTEGER :: n,nz,row_pntr,col_indx
-    DOUBLE PRECISION :: a,x,y
-!
-    DIMENSION :: x(n),y(n)
-    DIMENSION :: row_pntr(n+1)
-    DIMENSION :: col_indx(nz),a(nz)
+    INTEGER :: n,nz
+    INTEGER, DIMENSION(:) :: row_pntr,col_indx
+    DOUBLE PRECISION, DIMENSION(:) :: a,x,y
 !
     INTEGER :: i,j,k
 !-----------------------------------------------------------------------
+    IF((n+1.NE.SIZE(row_pntr)).OR.(nz.NE.SIZE(col_indx)).OR.(nz.NE.SIZE(a))   &
+    &   .OR.(n.NE.SIZE(x)).OR.(n.NE.SIZE(y))) THEN
+        WRITE(*,*) 'Incompatible array size'
+        STOP
+    END IF
+
 !   Initialize
     y=0.0D0
 !
@@ -433,7 +441,7 @@
     IMPLICIT NONE
     INTEGER :: n,iter
     TYPE(k2l_io_type) :: k2l_io
-    DOUBLE PRECISION, DIMENSION(0:n), INTENT(IN) :: lower,upper
+    DOUBLE PRECISION, DIMENSION(0:), INTENT(IN) :: lower,upper
     DOUBLE PRECISION, INTENT(out) :: innerpoint
     !
     SELECT CASE(TRIM(ADJUSTL(k2l_io%cprm(5))))
@@ -460,10 +468,15 @@
     IMPLICIT NONE
     INTEGER :: n
     DOUBLE PRECISION :: alpha
-    DOUBLE PRECISION, DIMENSION(n) :: x,y
+    DOUBLE PRECISION, DIMENSION(:) :: x,y
 !
     INTEGER :: i
 !-----------------------------------------------------------------------
+    IF((n.NE.SIZE(x)).OR.(n.NE.SIZE(y))) THEN
+        WRITE(*,*) 'Incompatible array size'
+        STOP
+    END IF
+
     alpha=0.0D0
 !
     DO i=1,n
@@ -480,8 +493,10 @@
 !
     INTEGER :: i
     DOUBLE PRECISION :: dtmp
-    DOUBLE PRECISION, DIMENSION(k2l_io%n) :: vtmp
+    DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:) :: vtmp
 !-----------------------------------------------------------------------
+    ALLOCATE(vtmp(k2l_io%n))
+
     IF(TRIM(ADJUSTL(k2l_io%cprm(3))).EQ.'ipr') THEN
         IF(ALLOCATED(k2l_io%kipr)) DEALLOCATE(k2l_io%kipr)
         ALLOCATE(k2l_io%kipr(k2l_io%k_upper-k2l_io%k_lower+1))
@@ -496,6 +511,7 @@
         END DO
     END IF
 !
+    DEALLOCATE(vtmp)
     RETURN
     END SUBROUTINE k2l_ipr
 !=======================================================================
@@ -503,11 +519,16 @@
     IMPLICIT NONE
     INTEGER :: n
     DOUBLE PRECISION :: alpha
-    DOUBLE PRECISION, DIMENSION(n) :: x
+    DOUBLE PRECISION, DIMENSION(:) :: x
 !
     INTEGER :: i
     DOUBLE PRECISION :: temp
 !-----------------------------------------------------------------------
+    IF(n.NE.SIZE(x)) THEN
+        WRITE(*,*) 'Incompatible array size'
+        STOP
+    END IF
+
     alpha=0.0D0
 !
     DO i=1,n

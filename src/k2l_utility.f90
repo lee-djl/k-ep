@@ -287,7 +287,7 @@
     ALLOCATE(k2l_int%row_pntr_a(k2l_io%n+1),k2l_int%col_indx_a(k2l_io%nz_a),k2l_int%a(k2l_io%nz_a)) 
 
     CALL k2l_crd2crs2(k2l_io%n,k2l_io%nz_a,k2l_io%indx_a,k2l_io%jndx_a,k2l_io%rval_a,&
-        &   k2l_int%row_pntr_a,k2l_int%col_indx_a,k2l_int%a)
+        &   k2l_int%row_pntr_a,k2l_int%col_indx_a,k2l_int%a)    
 !    
     IF(ALLOCATED(k2l_io%indx_b).AND.ALLOCATED(k2l_io%jndx_b).AND.ALLOCATED(k2l_io%rval_b)) THEN
         ALLOCATE(k2l_int%row_pntr_b(k2l_io%n+1),k2l_int%col_indx_b(k2l_io%nz_b),k2l_int%b(k2l_io%nz_b))   
@@ -301,17 +301,25 @@
     SUBROUTINE k2l_crd2crs2(n,nz,indx,jndx,rval,row_pntr,col_indx,a)
     IMPLICIT NONE
     INTEGER :: n,nz
-    INTEGER, DIMENSION(n+1) :: row_pntr
-    INTEGER, DIMENSION(nz) :: indx,jndx,col_indx
-    DOUBLE PRECISION, DIMENSION(nz) :: rval,a
+    INTEGER, DIMENSION(:) :: row_pntr
+    INTEGER, DIMENSION(:) :: indx,jndx,col_indx
+    DOUBLE PRECISION, DIMENSION(:) :: rval,a
 !
 !   local arguments
-    INTEGER, DIMENSION(nz) :: temp_indx,temp_jndx
-    DOUBLE PRECISION, DIMENSION(nz) :: temp_rval
+    INTEGER, ALLOCATABLE, DIMENSION(:) :: temp_indx,temp_jndx
+    DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:) :: temp_rval
 !
     INTEGER :: i,k,r,c,nzd
 !-----------------------------------------------------------------------
 !   Initialize
+    IF((n+1.NE.SIZE(row_pntr)).OR.(nz.NE.SIZE(indx)).OR.(nz.NE.SIZE(jndx))  &
+    & .OR.(nz.NE.SIZE(col_indx)).OR.(nz.NE.SIZE(rval)).OR.(nz.NE.SIZE(a))) THEN
+        WRITE(*,*) 'Incompatible array size'
+        STOP
+    END IF
+!
+    ALLOCATE(temp_indx(nz),temp_jndx(nz),temp_rval(nz))
+!
     temp_indx=indx
     temp_jndx=jndx
     temp_rval=rval
@@ -360,6 +368,7 @@
     END DO
     row_pntr(1) = nzd+1
 !-----------------------------------------------------------------------        
+    DEALLOCATE(temp_indx,temp_jndx,temp_rval)
     RETURN
     END SUBROUTINE k2l_crd2crs2
 !=======================================================================    

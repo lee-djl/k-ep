@@ -35,14 +35,19 @@
     SUBROUTINE example_writekval(n,kndx,kval)
     IMPLICIT NONE
     INTEGER :: n
-    INTEGER,DIMENSION(n) :: kndx
-    DOUBLE PRECISION,DIMENSION(n) :: kval
+    INTEGER,DIMENSION(:) :: kndx
+    DOUBLE PRECISION,DIMENSION(:) :: kval
 !   
     CHARACTER(256) :: opath
     INTEGER :: ounit=888,i
 !
 !-----------------------------------------------------------------------
 !
+    IF((n.NE.SIZE(kndx)).OR.(n.NE.SIZE(kval))) THEN
+        WRITE(*,*) 'Incompatible array size'
+        RETURN
+    END IF
+!    
     IF(n.EQ.1) THEN
         WRITE(opath,"(A6,I0.8,A4)") './eval',kndx(1),'.txt'
     ELSE
@@ -65,13 +70,18 @@
     SUBROUTINE example_writekvec(m,n,kndx,kvec)
     IMPLICIT NONE
     INTEGER :: m,n
-    INTEGER,DIMENSION(n) :: kndx
-    DOUBLE PRECISION,DIMENSION(m,n) :: kvec
+    INTEGER,DIMENSION(:) :: kndx
+    DOUBLE PRECISION,DIMENSION(:,:) :: kvec
 !   
     CHARACTER(256) :: opath
     INTEGER :: ounit=777,i,j
 !
 !-----------------------------------------------------------------------
+!
+    IF((n.NE.SIZE(kndx)).OR.(m.NE.SIZE(kvec,1)).OR.(n.NE.SIZE(kvec,2))) THEN
+        WRITE(*,*) 'Incompatible array size'
+        RETURN
+    END IF
 !
     DO j=1,n
         WRITE(opath,"(A6,I0.8,A4)") './evec',kndx(j),'.txt'
@@ -92,14 +102,19 @@
     SUBROUTINE example_writekipr(n,kndx,kipr)
     IMPLICIT NONE
     INTEGER :: n
-    INTEGER,DIMENSION(n) :: kndx
-    DOUBLE PRECISION,DIMENSION(n) :: kipr
+    INTEGER,DIMENSION(:) :: kndx
+    DOUBLE PRECISION,DIMENSION(:) :: kipr
 !   
     CHARACTER(256) :: opath
     INTEGER :: ounit=666,i
 !
 !-----------------------------------------------------------------------
 !
+    IF((n.NE.SIZE(kndx)).OR.(n.NE.SIZE(kipr))) THEN
+        WRITE(*,*) 'Incompatible array size'
+        RETURN
+    END IF
+!    
     IF(n.EQ.1) THEN
         WRITE(opath,"(A5,I0.8,A4)") './ipr',kndx(1),'.txt'
     ELSE
@@ -119,3 +134,4 @@
     END SUBROUTINE example_writekipr    
 !=======================================================================
     END MODULE example_utility
+    

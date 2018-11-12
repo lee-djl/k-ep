@@ -19,17 +19,15 @@
     INTEGER :: n,imax,its,ijob
     DOUBLE PRECISION :: v,bv,alpha,beta,theta
 !
-    DIMENSION :: alpha(imax),theta(imax)
-    DIMENSION :: beta(0:imax)
-    DIMENSION :: v(n,imax+1)
-    DIMENSION :: bv(n,0:imax+1)
+    DIMENSION :: alpha(:),theta(:)
+    DIMENSION :: beta(0:)
+    DIMENSION :: v(:,:)
+    DIMENSION :: bv(:,0:)
 !
 !   Local arguments
     INTEGER :: i,j,k,info,seed
-    DOUBLE PRECISION :: dtmp,sub,y,work
-!
-    DIMENSION :: sub(IMAX-1)
-    DIMENSION :: work(2*IMAX-2)
+    DOUBLE PRECISION :: dtmp,y
+    DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:) :: sub, work
 !
 !----------------------------------------------------------------------
 !   Initialize
@@ -95,9 +93,11 @@
             END IF
             beta(j)=DSQRT(dtmp)
 !           Eigenpair of tridiagonal matrix by LAPACK
+            ALLOCATE(sub(imax-1),work(2*imax-2))
             theta(1:j) = alpha(1:j)
             sub(1:j-1) = beta(1:j-1)
             CALL dstev('N',j,theta,sub,y,1,work,info)
+            DEALLOCATE(sub,work)
             IF(info.NE.0) THEN
                 WRITE(6,*) '=====k2l: Error in subroutine k2l_lanczos (LAPACK dstev failed)'
                 WRITE(6,*) 'j =', j, ',  info =', info
@@ -128,18 +128,16 @@
     INTEGER :: n,imax,its,ijob,m
     DOUBLE PRECISION :: v,bv,alpha,beta,theta,y
 !
-    DIMENSION :: alpha(imax),theta(imax)
-    DIMENSION :: beta(0:imax)
-    DIMENSION :: y(IMAX,IMAX)
-    DIMENSION :: v(n,imax+1)
-    DIMENSION :: bv(n,0:imax+1)
+    DIMENSION :: alpha(:),theta(:)
+    DIMENSION :: beta(0:)
+    DIMENSION :: y(:,:)
+    DIMENSION :: v(:,:)
+    DIMENSION :: bv(:,0:)
 !
 !   Local arguments
     INTEGER :: i,j,k,info,seed
-    DOUBLE PRECISION :: dtmp,sub,work
-!
-    DIMENSION :: sub(IMAX-1)
-    DIMENSION :: work(2*IMAX-2)
+    DOUBLE PRECISION :: dtmp
+    DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:) :: sub, work
 !
 !-----------------------------------------------------------------------
 !   Initialize
@@ -217,9 +215,11 @@
 !           Eigenpair of tridiagonal matrix by LAPACK
 !           Skip computation when subspace is smaller than m
             IF(j.GE.m) THEN
+                ALLOCATE(sub(imax-1),work(2*imax-2))
                 theta(1:j) = alpha(1:j)
                 sub(1:j-1) = beta(1:j-1)
                 CALL dstev('V',j,theta,sub,y,imax,work,info)
+                DEALLOCATE(sub,work)
                 IF(info.NE.0) THEN
                     WRITE(6,*) '=====k2l: Error in subroutine k2l_silanczos (LAPACK dstev failed)'
                     WRITE(6,*) 'j =', j, ',  info =', info
@@ -259,22 +259,19 @@
     DOUBLE PRECISION :: v,bv,beta,theta,y,lngth,shift,&
     &   egnval,egnvec,egnvec_old,resnorm,difnorm
 !
-    DIMENSION :: egnval(mmax),resnorm(mmax),difnorm(mmax)
-    DIMENSION :: theta(imax)
-    DIMENSION :: beta(0:imax)
-    DIMENSION :: y(IMAX,IMAX)
-    DIMENSION :: v(n,imax+1)
-    DIMENSION :: bv(n,0:imax+1)
-    DIMENSION :: egnvec(n,mmax+2),egnvec_old(n,mmax)
+    DIMENSION :: egnval(:),resnorm(:),difnorm(:)
+    DIMENSION :: theta(:)
+    DIMENSION :: beta(0:)
+    DIMENSION :: y(:,:)
+    DIMENSION :: v(:,:)
+    DIMENSION :: bv(:,0:)
+    DIMENSION :: egnvec(:,:),egnvec_old(:,:)
 !
 !   Local arguments
-    INTEGER :: i,j,k,l,theta_indx,indx
-    DOUBLE PRECISION :: theta_abs,bnd,tol_res,tol_dif,v_nrm,x,x_nrm,dtmp
-!
-    DIMENSION :: theta_indx(imax),theta_abs(imax),x_nrm(mmax)
-    DIMENSION :: bnd(0:2*mmax+1)
-    DIMENSION :: x(n)
-!
+    INTEGER :: i,j,k,l,indx
+    DOUBLE PRECISION :: tol_res,tol_dif,v_nrm,dtmp
+    INTEGER, ALLOCATABLE, DIMENSION(:) :: theta_indx
+    DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:) :: theta_abs,x_nrm,x,bnd
 !-----------------------------------------------------------------------
 !
     IF(its_si.LT.m) THEN
@@ -287,8 +284,10 @@
     END IF
 !
 !-----------------------------------------------------------------------
+    ALLOCATE(x(n))
     IF(ijob.EQ.1) THEN
 !       Initialize
+        ALLOCATE(theta_indx(imax),theta_abs(imax),x_nrm(mmax),bnd(0:2*mmax+1))
         DO i=1,its_si
             theta_indx(i)=i
         END DO
@@ -301,6 +300,7 @@
 !       Check whether appoximate eigenvalues are within an interval
         IF(theta_abs(its_si-m+1)*lngth.LT.1.0D0) THEN
             info=1
+            DEALLOCATE(theta_indx,theta_abs,x_nrm,bnd,x)
             RETURN
         END IF
 !-----------------------------------------------------------------------
@@ -325,6 +325,7 @@
         DO i=0,m
             IF(bnd(2*i).GE.bnd(2*i+1)) THEN
                 info=2
+                DEALLOCATE(theta_indx,theta_abs,x_nrm,bnd,x)
                 RETURN
             END IF
         END DO
@@ -366,12 +367,14 @@
             dtmp=dtmp/x_nrm(j)
             IF(dtmp.GT.tol_res) THEN
                 info=3
+                DEALLOCATE(theta_indx,theta_abs,x_nrm,bnd,x)
                 RETURN
             END IF
         END DO
 !-----------------------------------------------------------------------
 !
         ijob=2
+        DEALLOCATE(theta_indx,theta_abs,x_nrm,bnd,x)
         RETURN
     END IF
 !-----------------------------------------------------------------------
@@ -382,6 +385,7 @@
 !           egnvec(:,mmax+1):=A*egnvec(:,mmax+1) >>>>>>>>>>>>>>>>>>>>>>>
 !           egnvec(:,mmax+1):=B*egnvec(:,mmax+1) >>>>>>>>>>>>>>>>>>>>>>>
             ijob=3
+            IF(ALLOCATED(x)) DEALLOCATE(x)
             RETURN
         END IF
 !>>>>>>>Return from the caller after matvec
@@ -392,11 +396,13 @@
 !
             IF(dtmp.GT.tol_res) THEN
                 info=4
+                IF(ALLOCATED(x)) DEALLOCATE(x)
                 RETURN
             END IF
 !
             resnorm(j)=DSQRT(dtmp)
             ijob=2
+            IF(ALLOCATED(x)) DEALLOCATE(x)
             RETURN
         END IF
     END DO
@@ -417,6 +423,7 @@
                 dtmp=-1.0D0
             ELSE
                 info=5
+                IF(ALLOCATED(x)) DEALLOCATE(x)
                 RETURN
             END IF
 !
@@ -425,6 +432,7 @@
             CALL k2l_innpro(n,x,x,dtmp)
             IF(dtmp.GT.tol_dif) THEN
                 info=6
+                IF(ALLOCATED(x)) DEALLOCATE(x)
                 RETURN
             END IF
             difnorm(j)=DSQRT(dtmp)
@@ -433,6 +441,7 @@
 !
 !-----------------------------------------------------------------------
 !
+    IF(ALLOCATED(x)) DEALLOCATE(x)
     RETURN
     END SUBROUTINE k2l_convtest2
 !=======================================================================
@@ -441,10 +450,9 @@
 !   Modification of the code on the following URL
 !   (https://rosettacode.org/wiki/Sorting_algorithms/Quicksort#Fortran)
     IMPLICIT NONE
-    INTEGER :: n,indx
-    DOUBLE PRECISION :: x
-!
-    DIMENSION :: indx(n),x(n)
+    INTEGER :: n
+    INTEGER, DIMENSION(:) :: indx
+    DOUBLE PRECISION, DIMENSION(:) :: x
 !
     INTENT(IN) :: n
     INTENT(INOUT) :: x,indx
@@ -454,6 +462,10 @@
     DOUBLE PRECISION :: random,pivot,dtmp
 !
 !-----------------------------------------------------------------------
+    IF((n.NE.SIZE(indx)).OR.(n.NE.SIZE(x))) THEN
+        WRITE(*,*) 'Incompatible array size'
+        STOP
+    END IF
 !
     IF(n>1) THEN
         ! Random pivot
@@ -492,17 +504,22 @@
     END IF
     END SUBROUTINE k2l_qcksrt
 !=======================================================================    
-    SUBROUTINE k2l_randnum(seed,size,randarray)
+    SUBROUTINE k2l_randnum(seed,n,randarray)
     USE xorshift128plus
     IMPLICIT NONE
-    INTEGER :: seed,size
-    DOUBLE PRECISION, DIMENSION(size) :: randarray
+    INTEGER :: seed,n
+    DOUBLE PRECISION, DIMENSION(:) :: randarray
 !
     INTEGER :: i
 !-----------------------------------------------------------------------
+    IF(n.NE.SIZE(randarray)) THEN
+        WRITE(*,*) 'Incompatible array size'
+        STOP
+    END IF
+
     CALL rand_init(seed)
 !
-    DO i=1,size
+    DO i=1,n
         randarray(i)=rand_uniform()
     END DO
 ! 
