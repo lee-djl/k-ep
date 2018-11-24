@@ -17,16 +17,28 @@
     k2l_io%cprm(1)=''           ! If cprm(1) = 'print', print details of computation to terminal
     k2l_io%cprm(2)=''           ! If cprm(2) = 'user', use a user-defined initial interval
                                 ! [s_lower,s_upper) containing the [k_lower to k_upper]-th eigenvalues
-    k2l_io%cprm(3)=''           ! If cprm(3) = 'ipr', compute inverse participation ratio            
+    k2l_io%cprm(3)=''           ! If cprm(3) = 'ipr', compute inverse participation ratio
     k2l_io%cprm(4)='dmumps'     ! Sparse direct linear solver (Currently supports only double-precision MUMPS)
     k2l_io%cprm(5)='bisection'  ! Algorithm to narrowing down the initial internal (Currently only bisection is implemented) 
+    k2l_io%cprm(6)=''           ! If cprm(6) = 'second', k2l stops after the second stage (bisection).
+                                ! The interval [s_lower2,s_upper2) contains the [k_lower2 to k_upper2]-th 
+                                ! eigenvalues.
 !
     k2l_io%iprm(1) =8   ! 10**-iprm(1)=tolerance for relative residual 2-norm
     k2l_io%iprm(2) =6   ! 10**-iprm(2)=tolerance for relative difference 2-norm
-    k2l_io%iprm(10)=20  ! stopping criterion for bisection    
-    k2l_io%iprm(11)=MIN(50,k2l_io%n)    ! maximum iteration count for Lanczos
-    k2l_io%iprm(12)=50                  ! maximum iteration count for Bisection
-    k2l_io%iprm(13)=MIN(1000,k2l_io%n)  ! maximum iteration count for shift-and-invert Lanczos
+    k2l_io%iprm(10)=20  ! stopping criterion for the second stage (bisection).
+                        ! See below for the description of k2l_io%dprm(1).
+    k2l_io%iprm(11)=MIN(50,k2l_io%n)    ! maximum iteration count for the first stage (Lanczos)
+    k2l_io%iprm(12)=50                  ! maximum iteration count for the second stage (bisection)
+    k2l_io%iprm(13)=MIN(1000,k2l_io%n)  ! maximum iteration count for the third stage (shift-and-invert Lanczos)
+!
+    k2l_io%dprm(1)=2.0D0        ! stopping criterion for the second stage (bisection)
+                                ! k2l narrow downs the initial interval until the number of eigenvalues
+                                ! in the interval becomes smaller than equal to
+                                ! MAX( CEILING( k2l_io%dprm(1) * (k_upper - k_lower + 1), k2l_io%iprm(10) ).
+                                ! In particular, if k2l_io%dprm(1) = 1.0 (and k2l_io%iprm(10) = 1),
+                                ! k2l narrow downs the initial interval to find an interval containing only 
+                                ! [k_lower to k_upper]-th eigenvalues
 !
 !   Allocate    
     ALLOCATE(k2l_io%indx_a(k2l_io%nz_a),k2l_io%jndx_a(k2l_io%nz_a),k2l_io%rval_a(k2l_io%nz_a))    
@@ -75,7 +87,8 @@
         k2l_io%info=-15
     ELSE IF((k2l_io%iprm(12).LT.0).OR.(k2l_io%iprm(12).GT.64)) THEN
         k2l_io%info=-16
-    ELSE IF((k2l_io%iprm(13).LT.k2l_io%iprm(10)).OR.(k2l_io%iprm(13).GT.k2l_io%n)) THEN
+    ELSE IF((k2l_io%iprm(13).GT.k2l_io%n).OR.&
+    &   ((TRIM(ADJUSTL(k2l_io%cprm(6))).NE.'second') .AND. (k2l_io%iprm(13).LT.k2l_io%iprm(10))) ) THEN
         k2l_io%info=-17
     ELSE IF((TRIM(ADJUSTL(k2l_io%cprm(2))).EQ.'user').AND.(k2l_io%s_lower.GE.k2l_io%s_upper)) THEN
         k2l_io%info=-18
@@ -83,8 +96,10 @@
         k2l_io%info=-21
     ELSE IF(TRIM(ADJUSTL(k2l_io%cprm(5))).NE.'bisection') THEN
         k2l_io%info=-22
+    ELSE IF(k2l_io%dprm(1).LT.1.0D0) THEN
+        k2l_io%info=-31
     END IF
-!    
+!
     CALL k2l_info(k2l_io%info)
 !-----------------------------------------------------------------------
     RETURN
@@ -173,7 +188,9 @@
     ELSE IF(info.EQ.-21) THEN
         WRITE(6,*)'=====k2l info',info,': Select a sparse direct linear solver'                 
     ELSE IF(info.EQ.-22) THEN
-        WRITE(6,*)'=====k2l info',info,': Select a bracketing algorithm'         
+        WRITE(6,*)'=====k2l info',info,': Select a bracketing algorithm'
+    ELSE IF(info.EQ.-31) THEN
+        WRITE(6,*)'=====k2l info',info,': dprm(1) must satisfy 1 <= dprm(1)'  
     ELSE IF(info.EQ.1) THEN
         WRITE(6,*)'=====k2l info',info,': Failed to set an initial interval'
     ELSE IF(info.EQ.2) THEN
@@ -208,26 +225,34 @@
     WRITE(ounit,*)'====k2l summary========================================================='
     WRITE(ounit,*)'========================================================================'
     WRITE(ounit,*)
+    WRITE(ounit,*)'-----Problem'
+    WRITE(ounit,"(A8,I8,A10,I8,A45,I8)") 'Find the',k2l_io%k_lower,'-th to the',k2l_io%k_upper,&
+    &   '-th eigenpair(s) of a matrix pencil with size',k2l_io%n
+    WRITE(ounit,*)
     WRITE(ounit,*)'-----Computation time (s)'
     rtmp=0.0E0
     DO i=1,10
         rtmp=rtmp+k2l_int%cmpt_time(i)
     END DO
-    WRITE(ounit,"(A50,F15.7,/)") 'Overall                                          :',rtmp
-    WRITE(ounit,"(A50,F15.7)") 'Step 1 Task (i)   symbolic factor. A-sB          :',k2l_int%cmpt_time(1)
-    WRITE(ounit,"(A50,F15.7)") 'Step 1 Task (ii)  symbolic & numer. factor. B    :',k2l_int%cmpt_time(2)
-    WRITE(ounit,"(A50,F15.7)") 'Step 1 Task (iii) Lanczos                        :',k2l_int%cmpt_time(3)
-    WRITE(ounit,"(A50,F15.7)") 'Step 1 Task (iv)  inertia computation            :',k2l_int%cmpt_time(4)
-    WRITE(ounit,"(A50,F15.7)") 'Step 2 Task (v)   inertia computation            :',k2l_int%cmpt_time(5)
-    WRITE(ounit,"(A50,F15.7)") 'Step 3 Task (vi)  symbolic & numer. factor. A-sB :',k2l_int%cmpt_time(6)    
-    WRITE(ounit,"(A50,F15.7,/)") 'Step 3 Task (vii) SI Lanczos                     :',k2l_int%cmpt_time(7)
+    WRITE(ounit,"(A51,F15.7,/)") 'Overall                                          :',rtmp
+    WRITE(ounit,"(A51,F15.7)") 'Stage 1 Task (i)   symbolic factor. A-sB          :',k2l_int%cmpt_time(1)
+    WRITE(ounit,"(A51,F15.7)") 'Stage 1 Task (ii)  symbolic & numer. factor. B    :',k2l_int%cmpt_time(2)
+    WRITE(ounit,"(A51,F15.7)") 'Stage 1 Task (iii) Lanczos                        :',k2l_int%cmpt_time(3)
+    WRITE(ounit,"(A51,F15.7)") 'Stage 1 Task (iv)  inertia computation            :',k2l_int%cmpt_time(4)
+    WRITE(ounit,"(A51,F15.7)") 'Stage 2 Task (v)   inertia computation            :',k2l_int%cmpt_time(5)
+    WRITE(ounit,"(A51,F15.7)") 'Stage 3 Task (vi)  symbolic & numer. factor. A-sB :',k2l_int%cmpt_time(6)    
+    WRITE(ounit,"(A51,F15.7,/)") 'Stage 3 Task (vii) SI Lanczos                     :',k2l_int%cmpt_time(7)
 !
     WRITE(ounit,*)'-----Iteration count'
-    WRITE(ounit,"(A8,I4)") 'Step 1 :',k2l_int%icnt(1)
-    WRITE(ounit,"(A8,I4)") 'Step 2 :',k2l_int%icnt(2)
-    WRITE(ounit,"(A8,I4,/)") 'Step 3 :',k2l_int%icnt(4)
+    WRITE(ounit,"(A9,I4)") 'Stage 1 :',k2l_int%icnt(1)
+    WRITE(ounit,"(A9,I4)") 'Stage 2 :',k2l_int%icnt(2)
+    WRITE(ounit,"(A9,I4,/)") 'Stage 3 :',k2l_int%icnt(4)
+
+    WRITE(ounit,*)'-----LDL factorization'
+    WRITE(ounit,"(A74,I16)") 'Total number of LDL factorizations performed :',k2l_int%icnt(5)
+    WRITE(ounit,"(A74,I16,/)") 'Average number of nonzero elements in the factor L of LDL factorizations :',INT(k2l_int%icnt(6)/k2l_int%icnt(5),8)
 !
-    WRITE(ounit,*)'-----Step 1: set an initial interval'
+    WRITE(ounit,*)'-----Stage 1: set an initial interval'
     WRITE(ounit,"(A9,2X,A12,2X,A12,2X,A28,2X,A28)")'Iteration','InertiaLower','InertiaUpper',&
     &   'ShiftLower                  ','ShiftUpper                        '
     DO i=1,k2l_int%icnt(1)
@@ -241,7 +266,7 @@
     END IF
 !
     WRITE(ounit,*)
-    WRITE(ounit,*) '-----Step 2: narrow down the interval'
+    WRITE(ounit,*) '-----Stage 2: narrow down the interval'
     WRITE(ounit,"(A9,2X,A12,2X,A12,2X,A28,2X,A28)")'Iteration','InertiaLower','InertiaUpper',&
     &   'ShiftLower                  ','ShiftUpper                  '
     DO i=0,k2l_int%icnt(2)
@@ -255,7 +280,7 @@
     END IF
 !
     WRITE(ounit,*)
-    WRITE(ounit,*) '-----Step 3: select the midpoint'
+    WRITE(ounit,*) '-----Stage 3: select the midpoint'
     WRITE(ounit,"(A8,2X,A28)")'Inertia','Shift                       '
     WRITE(ounit,"(I8,2X,E28.18)") &
     &   k2l_int%inertia_3(1),k2l_int%shift_3(1)
@@ -266,7 +291,7 @@
 !
     IF(PRESENT(k2l_c)) THEN
         WRITE(ounit,*)
-        WRITE(ounit,*) '-----Step 3: compute eipenpairs of the interval'
+        WRITE(ounit,*) '-----Stage 3: compute eipenpairs of the interval'
         WRITE(ounit,"(A8,2X,A28,2X,A28,2X,A28)")'Index   ','Eigenvalue                  ',&
         &   'Relative residual 2-norm    ','Relative difference 2-norm    '
         DO i=1,k2l_int%icnt(3)

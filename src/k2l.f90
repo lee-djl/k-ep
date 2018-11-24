@@ -31,7 +31,7 @@
 !       2nd Stage: Narrow down the interval    
         CALL k2l_narrowinterval(k2l_io,k2l_int,k2l_factor_12)
 !    
-!       3rd Stage: Compute eigenpairs in the interval    
+!       3rd Stage (optional): Compute eigenpairs in the interval    
         CALL k2l_pair(k2l_io,k2l_int,k2l_factor_3)
 !
 !       Optional: Compute inverse participation ratio

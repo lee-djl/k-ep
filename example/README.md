@@ -58,6 +58,15 @@ See description below together with [example.f90](/example/example.f90).
         ```
         k2l_io%cprm(3)='ipr'
         ```
+    * `k2l_io%cprm(6)`: CHARACTER(16). Default value is null. To compute only an interval containing the `k2l_io%k_lower`-th to `k2l_io%k_upper`-th eigenvalue(s), set the value as follows. Note that eigenpairs are not computed.
+        ```
+        k2l_io%cprm(6)='second'
+        ```
+    * `k2l_io%iprm(10)` and `k2l_io%dprm(1)`: INTEGER(8) and DOUBLE PRECISION. Stopping criterion for the second stage (bisection). Default values are 20 and 2.0, respectively. The initial interval is narrowed down until the number of eigenvalues in the interval becomes smaller than or equal to MAX(`k2l_io%iprm(10)`,CEILING(`k2l_io%dprm(1)`*(`k2l_io%k_upper`-`k2l_io%k_lower`+1)). If users want for the initial interval to be narrowed down to contain only the `k2l_io%k_lower`-th to `k2l_io%k_upper`-th eigenvalue(s), set the values as follows. Note that it is recommended to change these parameters only if users know how the three-stage algorithm works.
+        ```
+        k2l_io%iprm(10)=1
+        k2l_io%dprm(1)=1.0D0
+        ```
 
 8. Solve.
     ```

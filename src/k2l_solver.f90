@@ -129,16 +129,17 @@
     RETURN
     END SUBROUTINE k2l_ldl_initialize_dmumps
 !=======================================================================
-    SUBROUTINE k2l_ldl_factor(k2l_io,k2l_factor,shift,negativeinertia)
+    SUBROUTINE k2l_ldl_factor(k2l_io,k2l_factor,nonzerofactor,shift,negativeinertia)
     IMPLICIT NONE
     TYPE(k2l_io_type), INTENT(INOUT) :: k2l_io
     TYPE(k2l_factor_type), INTENT(OUT) :: k2l_factor
+    INTEGER(KIND=8), INTENT(OUT) :: nonzerofactor
     DOUBLE PRECISION, INTENT(IN),OPTIONAL :: shift
     INTEGER, INTENT(OUT),OPTIONAL :: negativeinertia
 !
     SELECT CASE(TRIM(ADJUSTL(k2l_io%cprm(4))))
     CASE('dmumps')
-        CALL k2l_ldl_factor_dmumps(k2l_io,k2l_factor,shift,negativeinertia)
+        CALL k2l_ldl_factor_dmumps(k2l_io,k2l_factor,nonzerofactor,shift,negativeinertia)
     ! CASE('any_other_sparsesolver')
     !     CALL any_other_sparsesolver
     END SELECT
@@ -146,10 +147,11 @@
     RETURN
     END SUBROUTINE k2l_ldl_factor
 !=======================================================================
-    SUBROUTINE k2l_ldl_factor_dmumps(k2l_io,k2l_factor,shift,negativeinertia)
+    SUBROUTINE k2l_ldl_factor_dmumps(k2l_io,k2l_factor,nonzerofactor,shift,negativeinertia)
     IMPLICIT NONE
     TYPE(k2l_io_type), INTENT(INOUT) :: k2l_io
     TYPE(k2l_factor_type), INTENT(OUT) :: k2l_factor
+    INTEGER(KIND=8), INTENT(OUT) :: nonzerofactor
     DOUBLE PRECISION, INTENT(IN),OPTIONAL :: shift
     INTEGER, INTENT(OUT),OPTIONAL :: negativeinertia
 !
@@ -187,19 +189,27 @@
 !   Get inertia
     IF(PRESENT(shift)) negativeinertia=k2l_factor%dmumps%infog(12)
 !
+!   Get the number of nonzero elements in the factor L of LDL factorization
+    IF(k2l_factor%dmumps%infog(29).GE.0) THEN
+        nonzerofactor=k2l_factor%dmumps%infog(29)
+    ELSE
+        nonzerofactor=INT(-k2l_factor%dmumps%infog(29) * (10**6),8)
+    END IF
+!
     RETURN
     END SUBROUTINE k2l_ldl_factor_dmumps
 !=======================================================================
-    SUBROUTINE k2l_ldl_inertia(k2l_io,k2l_factor,shift,negativeinertia)
+    SUBROUTINE k2l_ldl_inertia(k2l_io,k2l_factor,nonzerofactor,shift,negativeinertia)
     IMPLICIT NONE
     TYPE(k2l_io_type), INTENT(INOUT) :: k2l_io
     TYPE(k2l_factor_type), INTENT(OUT) :: k2l_factor
+    INTEGER(KIND=8), INTENT(OUT) :: nonzerofactor
     DOUBLE PRECISION, INTENT(IN) :: shift
     INTEGER, INTENT(OUT) :: negativeinertia
 !
     SELECT CASE(TRIM(ADJUSTL(k2l_io%cprm(4))))
     CASE('dmumps')
-        CALL k2l_ldl_inertia_dmumps(k2l_io,k2l_factor,shift,negativeinertia)
+        CALL k2l_ldl_inertia_dmumps(k2l_io,k2l_factor,nonzerofactor,shift,negativeinertia)
     ! CASE('any_other_sparsesolver')
     !     CALL any_other_sparsesolver
     END SELECT
@@ -207,10 +217,11 @@
     RETURN
     END SUBROUTINE k2l_ldl_inertia
 !=======================================================================
-    SUBROUTINE k2l_ldl_inertia_dmumps(k2l_io,k2l_factor,shift,negativeinertia)
+    SUBROUTINE k2l_ldl_inertia_dmumps(k2l_io,k2l_factor,nonzerofactor,shift,negativeinertia)
     IMPLICIT NONE
     TYPE(k2l_io_type), INTENT(INOUT) :: k2l_io
     TYPE(k2l_factor_type), INTENT(OUT) :: k2l_factor
+    INTEGER(KIND=8), INTENT(OUT) :: nonzerofactor
     DOUBLE PRECISION, INTENT(IN) :: shift
     INTEGER, INTENT(OUT) :: negativeinertia
 !
@@ -243,6 +254,13 @@
 !
 !   Get inertia
     negativeinertia=k2l_factor%dmumps%infog(12)
+!
+!   Get the number of nonzero elements in the factor L of LDL factorization
+    IF(k2l_factor%dmumps%infog(29).GE.0) THEN
+        nonzerofactor=k2l_factor%dmumps%infog(29)
+    ELSE
+        nonzerofactor=INT(-k2l_factor%dmumps%infog(29) * (10**6),8)
+    END IF
 !
     RETURN
     END SUBROUTINE k2l_ldl_inertia_dmumps
@@ -495,23 +513,29 @@
     DOUBLE PRECISION :: dtmp
     DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:) :: vtmp
 !-----------------------------------------------------------------------
-    ALLOCATE(vtmp(k2l_io%n))
-
-    IF(TRIM(ADJUSTL(k2l_io%cprm(3))).EQ.'ipr') THEN
-        IF(ALLOCATED(k2l_io%kipr)) DEALLOCATE(k2l_io%kipr)
-        ALLOCATE(k2l_io%kipr(k2l_io%k_upper-k2l_io%k_lower+1))
 !
-!       Compute Inverse Participation Ratio
-        DO i=1,k2l_io%k_upper-k2l_io%k_lower+1
-            CALL k2l_fournormquad(k2l_io%n,k2l_io%kvec(:,i),k2l_io%kipr(i))
-            CALL k2l_matvec('B',k2l_int,k2l_io%kvec(:,i),vtmp)
-            CALL k2l_innpro(k2l_io%n,k2l_io%kvec(:,i),vtmp,dtmp)
-            dtmp=dtmp*dtmp
-            k2l_io%kipr(i)=k2l_io%kipr(i)/dtmp
-        END DO
+    IF(TRIM(ADJUSTL(k2l_io%cprm(6))).EQ.'second') THEN
+        RETURN
     END IF
 !
+    IF(TRIM(ADJUSTL(k2l_io%cprm(3))).NE.'ipr') THEN
+        RETURN
+    END IF
+!
+    ALLOCATE(vtmp(k2l_io%n))
+    IF(ALLOCATED(k2l_io%kipr)) DEALLOCATE(k2l_io%kipr)
+    ALLOCATE(k2l_io%kipr(k2l_io%k_upper-k2l_io%k_lower+1))
+!
+!   Compute Inverse Participation Ratio
+    DO i=1,k2l_io%k_upper-k2l_io%k_lower+1
+        CALL k2l_fournormquad(k2l_io%n,k2l_io%kvec(:,i),k2l_io%kipr(i))
+        CALL k2l_matvec('B',k2l_int,k2l_io%kvec(:,i),vtmp)
+        CALL k2l_innpro(k2l_io%n,k2l_io%kvec(:,i),vtmp,dtmp)
+        dtmp=dtmp*dtmp
+        k2l_io%kipr(i)=k2l_io%kipr(i)/dtmp
+    END DO
     DEALLOCATE(vtmp)
+!
     RETURN
     END SUBROUTINE k2l_ipr
 !=======================================================================

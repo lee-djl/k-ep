@@ -18,6 +18,7 @@
     INTEGER :: imax_l
 !
     INTEGER :: i,clock_1,clock_2,clock_rate,clock_max
+    INTEGER(KIND=8) :: itmp8
 !-----------------------------------------------------------------------        
 !   Initialize
     IF(TRIM(ADJUSTL(k2l_io%cprm(2))).EQ.'user') userinterval=.TRUE.
@@ -53,9 +54,14 @@
 !
 !       Compute inertia at lower endpoint
         CALL SYSTEM_CLOCK(clock_1,clock_rate,clock_max)
-        CALL k2l_ldl_inertia(k2l_io,k2l_factor,k2l_int%shift_1_lower(1),k2l_int%inertia_1_lower(1))
+        CALL k2l_ldl_inertia(k2l_io,k2l_factor,itmp8,k2l_int%shift_1_lower(1),k2l_int%inertia_1_lower(1))
         CALL SYSTEM_CLOCK(clock_2,clock_rate,clock_max)
         k2l_int%cmpt_time(4)=k2l_int%cmpt_time(4)+REAL(clock_2-clock_1)/REAL(clock_rate)
+!       Update the total number of LDL factorizations performed
+        k2l_int%icnt(5)=k2l_int%icnt(5)+1
+!       Update the number of nonzero elements in the factor L of LDL factorizations
+        k2l_int%icnt(6)=k2l_int%icnt(6)+itmp8
+!
         IF(k2l_int%inertia_1_lower(1).GE.k2l_io%k_lower) THEN
             CALL k2l_ldl_finalize(k2l_io,k2l_factor)
             k2l_io%info=1
@@ -65,9 +71,14 @@
 !
 !       Compute inertia at upper endpoint        
         CALL SYSTEM_CLOCK(clock_1,clock_rate,clock_max)
-        CALL k2l_ldl_inertia(k2l_io,k2l_factor,k2l_int%shift_1_upper(1),k2l_int%inertia_1_upper(1))
+        CALL k2l_ldl_inertia(k2l_io,k2l_factor,itmp8,k2l_int%shift_1_upper(1),k2l_int%inertia_1_upper(1))
         CALL SYSTEM_CLOCK(clock_2,clock_rate,clock_max)
         k2l_int%cmpt_time(4)=k2l_int%cmpt_time(4)+REAL(clock_2-clock_1)/REAL(clock_rate)
+!       Update the total number of LDL factorizations performed
+        k2l_int%icnt(5)=k2l_int%icnt(5)+1
+!       Update the number of nonzero elements in the factor L of LDL factorizations
+        k2l_int%icnt(6)=k2l_int%icnt(6)+itmp8
+!
         IF(k2l_int%inertia_1_upper(1).LT.k2l_io%k_upper) THEN
             CALL k2l_ldl_finalize(k2l_io,k2l_factor)
             k2l_io%info=1    
@@ -84,9 +95,13 @@
 !       Factorize matrix B
         CALL SYSTEM_CLOCK(clock_1,clock_rate,clock_max)
         CALL k2l_ldl_initialize(k2l_io,k2l_factor_B)
-        CALL k2l_ldl_factor(k2l_io,k2l_factor_B)
+        CALL k2l_ldl_factor(k2l_io,k2l_factor_B,itmp8)
         CALL SYSTEM_CLOCK(clock_2,clock_rate,clock_max)
         k2l_int%cmpt_time(2)=k2l_int%cmpt_time(2)+REAL(clock_2-clock_1)/REAL(clock_rate)
+!       Update the total number of LDL factorizations performed
+        k2l_int%icnt(5)=k2l_int%icnt(5)+1
+!       Update the number of nonzero elements in the factor L of LDL factorizations
+        k2l_int%icnt(6)=k2l_int%icnt(6)+itmp8
 !
         CALL SYSTEM_CLOCK(clock_1,clock_rate,clock_max)
 !       Initialize Lanczos
@@ -105,10 +120,14 @@
         CALL SYSTEM_CLOCK(clock_1,clock_rate,clock_max)
         k2l_int%shift_1_lower(1)=k2l_l%theta(1)
         k2l_int%shift_1_upper(1)=k2l_int%shift_1_lower(1)
-        CALL k2l_ldl_inertia(k2l_io,k2l_factor,k2l_int%shift_1_lower(1),k2l_int%inertia_1_lower(1))
+        CALL k2l_ldl_inertia(k2l_io,k2l_factor,itmp8,k2l_int%shift_1_lower(1),k2l_int%inertia_1_lower(1))
         k2l_int%inertia_1_upper(1)=k2l_int%inertia_1_lower(1)
         CALL SYSTEM_CLOCK(clock_2,clock_rate,clock_max)
-        k2l_int%cmpt_time(4)=k2l_int%cmpt_time(4)+REAL(clock_2-clock_1)/REAL(clock_rate)        
+        k2l_int%cmpt_time(4)=k2l_int%cmpt_time(4)+REAL(clock_2-clock_1)/REAL(clock_rate)
+!       Update the total number of LDL factorizations performed
+        k2l_int%icnt(5)=k2l_int%icnt(5)+1
+!       Update the number of nonzero elements in the factor L of LDL factorizations
+        k2l_int%icnt(6)=k2l_int%icnt(6)+itmp8
 !
         IF(k2l_int%inertia_1_upper(1).LT.k2l_io%k_lower) THEN
             DO i=2,imax_l
@@ -132,9 +151,13 @@
                     k2l_int%inertia_1_lower(i)=k2l_int%inertia_1_lower(i-1)
                 END IF
                 k2l_int%shift_1_upper(i)=k2l_l%theta(i)
-                CALL k2l_ldl_inertia(k2l_io,k2l_factor,k2l_int%shift_1_upper(i),k2l_int%inertia_1_upper(i))
+                CALL k2l_ldl_inertia(k2l_io,k2l_factor,itmp8,k2l_int%shift_1_upper(i),k2l_int%inertia_1_upper(i))
                 CALL SYSTEM_CLOCK(clock_2,clock_rate,clock_max)
                 k2l_int%cmpt_time(4)=k2l_int%cmpt_time(4)+REAL(clock_2-clock_1)/REAL(clock_rate)
+!               Update the total number of LDL factorizations performed
+                k2l_int%icnt(5)=k2l_int%icnt(5)+1
+!               Update the number of nonzero elements in the factor L of LDL factorizations
+                k2l_int%icnt(6)=k2l_int%icnt(6)+itmp8
 !
                 k2l_int%icnt(1)=i
                 IF(i.NE.1) THEN
@@ -175,9 +198,13 @@
                     k2l_int%inertia_1_upper(i)=k2l_int%inertia_1_upper(i-1)
                 END IF
                 k2l_int%shift_1_lower(i)=k2l_l%theta(1)
-                CALL k2l_ldl_inertia(k2l_io,k2l_factor,k2l_int%shift_1_lower(i),k2l_int%inertia_1_lower(i))                
+                CALL k2l_ldl_inertia(k2l_io,k2l_factor,itmp8,k2l_int%shift_1_lower(i),k2l_int%inertia_1_lower(i))                
                 CALL SYSTEM_CLOCK(clock_2,clock_rate,clock_max)
                 k2l_int%cmpt_time(4)=k2l_int%cmpt_time(4)+REAL(clock_2-clock_1)/REAL(clock_rate)
+!               Update the total number of LDL factorizations performed
+                k2l_int%icnt(5)=k2l_int%icnt(5)+1
+!               Update the number of nonzero elements in the factor L of LDL factorizations
+                k2l_int%icnt(6)=k2l_int%icnt(6)+itmp8
 !
                 k2l_int%icnt(1)=i
                 IF(i.NE.1) THEN
@@ -195,7 +222,7 @@
                 END IF
             END DO
         END IF
-!               
+!
         IF((k2l_int%inertia_1_lower(1).GE.k2l_io%k_lower).AND.&
             &   (k2l_int%inertia_1_upper(1).LT.k2l_io%k_upper)) THEN
             DO i=2,imax_l
@@ -218,10 +245,16 @@
 !
                 k2l_int%inertia_1_lower(i)=k2l_int%inertia_1_lower(i-1)
                 k2l_int%inertia_1_upper(i)=k2l_int%inertia_1_upper(i-1)
-                IF(k2l_int%inertia_1_lower(i-1).GE.k2l_io%k_lower) &
-                &   CALL k2l_ldl_inertia(k2l_io,k2l_factor,k2l_int%shift_1_lower(i),k2l_int%inertia_1_lower(i))
-                IF(k2l_int%inertia_1_upper(i-1).LT.k2l_io%k_upper) &
-                &   CALL k2l_ldl_inertia(k2l_io,k2l_factor,k2l_int%shift_1_upper(i),k2l_int%inertia_1_upper(i))
+                IF(k2l_int%inertia_1_lower(i-1).GE.k2l_io%k_lower) THEN
+                    CALL k2l_ldl_inertia(k2l_io,k2l_factor,itmp8,k2l_int%shift_1_lower(i),k2l_int%inertia_1_lower(i))
+                    k2l_int%icnt(5)=k2l_int%icnt(5)+1
+                    k2l_int%icnt(6)=k2l_int%icnt(6)+itmp8
+                END IF
+                IF(k2l_int%inertia_1_upper(i-1).LT.k2l_io%k_upper) THEN
+                    CALL k2l_ldl_inertia(k2l_io,k2l_factor,itmp8,k2l_int%shift_1_upper(i),k2l_int%inertia_1_upper(i))
+                    k2l_int%icnt(5)=k2l_int%icnt(5)+1
+                    k2l_int%icnt(6)=k2l_int%icnt(6)+itmp8
+                END IF
                 CALL SYSTEM_CLOCK(clock_2,clock_rate,clock_max)
                 k2l_int%cmpt_time(4)=k2l_int%cmpt_time(4)+REAL(clock_2-clock_1)/REAL(clock_rate)
 !
@@ -255,14 +288,16 @@
     TYPE(k2l_factor_type) :: k2l_factor
 !
     LOGICAL :: twointervals=.FALSE.
-    INTEGER :: imax_b,mmax_b
+    INTEGER :: imax_b,mmax_b,mmax_b2
     DOUBLE PRECISION :: dtmp
     INTEGER :: i,itmp,clock_1,clock_2,clock_rate,clock_max
+    INTEGER(KIND=8) :: itmp8
 !-----------------------------------------------------------------------       
 !   Initialize
     imax_b=k2l_io%iprm(12)
-    mmax_b=k2l_io%k_upper-k2l_io%k_lower+1
-    mmax_b=MAX(2*mmax_b,k2l_io%iprm(10))
+    itmp=k2l_io%k_upper-k2l_io%k_lower+1  ! Number of target eigenvalues
+    mmax_b=MAX(CEILING(k2l_io%dprm(1)*itmp),k2l_io%iprm(10))  ! Stopping criterion
+    mmax_b2=MAX(FLOOR((k2l_io%dprm(1)-1.0D0)*0.5D0*itmp),1)   ! Stopping criterion (internal)
     ALLOCATE(k2l_int%shift_2_lower(0:imax_b),k2l_int%shift_2_upper(0:imax_b), &
         &   k2l_int%inertia_2_lower(0:imax_b),k2l_int%inertia_2_upper(0:imax_b))
     ALLOCATE(k2l_int%shift_2_lower2(0:imax_b),k2l_int%shift_2_upper2(0:imax_b), &
@@ -300,7 +335,11 @@
 !           Bisection and inertia computation
             CALL SYSTEM_CLOCK(clock_1,clock_rate,clock_max)
             CALL k2l_bracketing(k2l_io,imax_b,k2l_int%shift_2_lower,k2l_int%shift_2_upper,i,dtmp)
-            CALL k2l_ldl_inertia(k2l_io,k2l_factor,dtmp,itmp)
+            CALL k2l_ldl_inertia(k2l_io,k2l_factor,itmp8,dtmp,itmp)
+!           Update the total number of LDL factorizations performed
+            k2l_int%icnt(5)=k2l_int%icnt(5)+1
+!           Update the number of nonzero elements in the factor L of LDL factorizations
+            k2l_int%icnt(6)=k2l_int%icnt(6)+itmp8
 !
             k2l_int%shift_2_lower(i)=k2l_int%shift_2_lower(i-1)
             k2l_int%shift_2_upper(i)=k2l_int%shift_2_upper(i-1)
@@ -322,7 +361,7 @@
             END IF
             CALL SYSTEM_CLOCK(clock_2,clock_rate,clock_max)
             k2l_int%cmpt_time(5)=k2l_int%cmpt_time(5)+REAL(clock_2-clock_1)/REAL(clock_rate)
-!            
+!
         ELSE IF(twointervals) THEN
 !           Bisection and inertia computation
             CALL SYSTEM_CLOCK(clock_1,clock_rate,clock_max)
@@ -331,9 +370,13 @@
             k2l_int%inertia_2_lower(i)=k2l_int%inertia_2_lower(i-1)
             k2l_int%inertia_2_upper2(i)=k2l_int%inertia_2_upper2(i-1)
 !            
-            IF(k2l_int%inertia_2_upper2(i-1)-k2l_int%inertia_2_lower(i-1).GT.INT(mmax_b/4)) THEN
+            IF(k2l_int%inertia_2_upper2(i-1)-k2l_int%inertia_2_lower(i-1).GT.mmax_b2) THEN
                 CALL k2l_bracketing(k2l_io,imax_b,k2l_int%shift_2_lower,k2l_int%shift_2_upper2,i,dtmp)
-                CALL k2l_ldl_inertia(k2l_io,k2l_factor,dtmp,itmp)
+                CALL k2l_ldl_inertia(k2l_io,k2l_factor,itmp8,dtmp,itmp)
+!               Update the total number of LDL factorizations performed
+                k2l_int%icnt(5)=k2l_int%icnt(5)+1
+!               Update the number of nonzero elements in the factor L of LDL factorizations
+                k2l_int%icnt(6)=k2l_int%icnt(6)+itmp8
 !                
                 IF(itmp.GE.k2l_io%k_lower) THEN
                     k2l_int%shift_2_upper2(i)=dtmp
@@ -349,9 +392,13 @@
             k2l_int%inertia_2_lower2(i)=k2l_int%inertia_2_lower2(i-1)
             k2l_int%inertia_2_upper(i)=k2l_int%inertia_2_upper(i-1)
 !            
-            IF(k2l_int%inertia_2_upper(i-1)-k2l_int%inertia_2_lower2(i-1).GT.INT(mmax_b/4)) THEN
+            IF(k2l_int%inertia_2_upper(i-1)-k2l_int%inertia_2_lower2(i-1).GT.mmax_b2) THEN
                 CALL k2l_bracketing(k2l_io,imax_b,k2l_int%shift_2_lower2,k2l_int%shift_2_upper,i,dtmp)
-                CALL k2l_ldl_inertia(k2l_io,k2l_factor,dtmp,itmp)
+                CALL k2l_ldl_inertia(k2l_io,k2l_factor,itmp8,dtmp,itmp)
+!               Update the total number of LDL factorizations performed
+                k2l_int%icnt(5)=k2l_int%icnt(5)+1
+!               Update the number of nonzero elements in the factor L of LDL factorizations
+                k2l_int%icnt(6)=k2l_int%icnt(6)+itmp8
 !                
                 IF(itmp.GE.k2l_io%k_upper) THEN
                     k2l_int%shift_2_upper(i)=dtmp
@@ -367,6 +414,17 @@
         END IF
     END DO
 !
+    IF(TRIM(ADJUSTL(k2l_io%cprm(6))).EQ.'second') THEN
+        k2l_io%k_lower2=k2l_int%inertia_2_lower(k2l_int%icnt(2))+1
+        k2l_io%k_upper2=k2l_int%inertia_2_upper(k2l_int%icnt(2))
+        k2l_io%s_lower2=k2l_int%shift_2_lower(k2l_int%icnt(2))
+        k2l_io%s_upper2=k2l_int%shift_2_upper(k2l_int%icnt(2))
+        k2l_io%info=2    
+        IF(TRIM(ADJUSTL(k2l_io%cprm(1))).EQ.'print') CALL k2l_summary(k2l_io,k2l_int)
+        k2l_io%info=0
+        CALL k2l_info(k2l_io%info)
+    END IF
+!
     RETURN
     END SUBROUTINE k2l_narrowinterval
 !=======================================================================
@@ -381,12 +439,17 @@
     TYPE(k2l_convtest_type) :: k2l_c
     INTEGER :: imax_s
     INTEGER :: i,j,itmp,clock_1,clock_2,clock_rate,clock_max
+    INTEGER(KIND=8) :: itmp8
 !-----------------------------------------------------------------------       
+    IF(TRIM(ADJUSTL(k2l_io%cprm(6))).EQ.'second') THEN
+        RETURN
+    END IF
+!
 !   Initialize
     imax_s=k2l_io%iprm(13)
     k2l_s%its=1
     k2l_s%ijob=1
-    k2l_s%icnt=k2l_int%icnt(3)
+    k2l_s%icnt=INT(k2l_int%icnt(3))
     k2l_c%ijob=1
     k2l_c%info=0
     ALLOCATE(k2l_s%alpha(imax_s),k2l_s%theta(imax_s),k2l_s%beta(0:imax_s),&
@@ -413,9 +476,13 @@
 !   Factorize matrix A-sigma*B
     CALL SYSTEM_CLOCK(clock_1,clock_rate,clock_max)
     CALL k2l_bracketing_bisection(k2l_int%shift_2_lower(k2l_int%icnt(2)),k2l_int%shift_2_upper(k2l_int%icnt(2)),k2l_int%shift_3(1))
-    CALL k2l_ldl_factor(k2l_io,k2l_factor,k2l_int%shift_3(1),k2l_int%inertia_3(1))    
+    CALL k2l_ldl_factor(k2l_io,k2l_factor,itmp8,k2l_int%shift_3(1),k2l_int%inertia_3(1))    
     CALL SYSTEM_CLOCK(clock_2,clock_rate,clock_max)
     k2l_int%cmpt_time(6)=k2l_int%cmpt_time(6)+REAL(clock_2-clock_1)/REAL(clock_rate)
+!   Update the total number of LDL factorizations performed
+    k2l_int%icnt(5)=k2l_int%icnt(5)+1
+!   Update the number of nonzero elements in the factor L of LDL factorizations
+    k2l_int%icnt(6)=k2l_int%icnt(6)+itmp8
 !
     CALL SYSTEM_CLOCK(clock_1,clock_rate,clock_max)
 !   Initialize Lanczos

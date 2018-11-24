@@ -7,11 +7,14 @@
         DOUBLE PRECISION :: s_lower,s_upper
         CHARACTER(16),DIMENSION(10) :: cprm
         INTEGER,DIMENSION(30) :: iprm
+        DOUBLE PRECISION,DIMENSION(30) :: dprm
         INTEGER,ALLOCATABLE,DIMENSION(:) :: indx_a,jndx_a
         DOUBLE PRECISION,ALLOCATABLE,DIMENSION(:) :: rval_a
         INTEGER,ALLOCATABLE,DIMENSION(:) :: indx_b,jndx_b
         DOUBLE PRECISION,ALLOCATABLE,DIMENSION(:) :: rval_b        
 !       Output        
+        INTEGER :: k_lower2,k_upper2
+        DOUBLE PRECISION :: s_lower2,s_upper2
         DOUBLE PRECISION,ALLOCATABLE,DIMENSION(:) :: kval
         DOUBLE PRECISION,ALLOCATABLE,DIMENSION(:,:) :: kvec
         DOUBLE PRECISION,ALLOCATABLE,DIMENSION(:) :: kipr

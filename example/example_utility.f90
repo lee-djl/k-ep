@@ -97,7 +97,7 @@
 !
     RETURN
     END SUBROUTINE example_writekvec
-    
+
 !=======================================================================
     SUBROUTINE example_writekipr(n,kndx,kipr)
     IMPLICIT NONE
@@ -132,6 +132,33 @@
     CLOSE(ounit)
     RETURN
     END SUBROUTINE example_writekipr    
+!=======================================================================
+    SUBROUTINE example_writekint(k_lower,k_upper,s_lower,s_upper)
+    IMPLICIT NONE
+    INTEGER :: k_lower,k_upper
+    DOUBLE PRECISION :: s_lower,s_upper
+!   
+    CHARACTER(256) :: opath
+    INTEGER :: ounit=666,i
+!
+!-----------------------------------------------------------------------
+!
+    IF(k_upper-k_lower.EQ.0) THEN
+        WRITE(opath,"(A5,I0.8,A4)") './int',k_lower,'.txt'
+    ELSE
+        WRITE(opath,"(A5,I0.8,A2,I0.8,A4)") &
+            & './int',k_lower,'to', k_upper,'.txt'        
+    END IF
+!   
+    OPEN(UNIT=ounit,FILE=TRIM(ADJUSTL(opath)),STATUS='REPLACE',&
+    &   ACCESS='SEQUENTIAL',ACTION='WRITE')
+!
+    WRITE(ounit,"(2E28.18)") s_lower,s_upper
+    WRITE(ounit,"(2I8)") k_lower,k_upper
+!
+    CLOSE(ounit)
+    RETURN
+    END SUBROUTINE example_writekint    
 !=======================================================================
     END MODULE example_utility
     

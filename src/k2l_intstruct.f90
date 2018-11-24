@@ -5,7 +5,7 @@
 !       Computation time
         REAL,DIMENSION(10) :: cmpt_time
 !       Iteration count for internal job
-        INTEGER,DIMENSION(10) :: icnt
+        INTEGER(KIND=8),DIMENSION(10) :: icnt
 !       Input matrix in CRS format        
         INTEGER,ALLOCATABLE,DIMENSION(:) :: row_pntr_a,row_pntr_b,  &
             &   col_indx_a,col_indx_b

@@ -31,8 +31,8 @@
     INTEGER ::              &
     &   targetindex_lower,  &   ! k_lower
     &   targetindex_upper       ! k_upper
-!+++Optional: User-defined initial interval [s_lower,s_upper) containing
-!+++the [k_lower,k_upper]-th eigenvalues
+!---Optional: User-defined initial interval [s_lower,s_upper) containing
+!---the [k_lower,k_upper]-th eigenvalues
     DOUBLE PRECISION ::     &
     &   userinterval_lower, &   ! s_lower
     &   userinterval_upper      ! s_upper
@@ -61,12 +61,12 @@
     READ(cla(4),*) targetindex_upper
 !
     IF(IARGC().GT.4) THEN
-!+++++++Optional: Provide the lower endpoint of a user-defined initial
-!+++++++interval as a command line argument
+!-------Optional: Provide the lower endpoint of a user-defined initial
+!-------interval as a command line argument
         CALL GETARG(5,cla(5))
         READ(cla(5),*) userinterval_lower
-!+++++++Optional: Provide the upper endpoint of a user-defined initial
-!+++++++interval as a command line argument
+!-------Optional: Provide the upper endpoint of a user-defined initial
+!-------interval as a command line argument
         CALL GETARG(6,cla(6))
         READ(cla(6),*) userinterval_upper
     END IF
@@ -100,22 +100,40 @@
 !-----------------------------------------------------------------------
     k2l_io%k_lower=targetindex_lower
     k2l_io%k_upper=targetindex_upper
-!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-!+++Optional: Set input parameters for k2l++++++++++++++++++++++++++++++
-!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-!+++If cprm(1)='print', k2l prints details of its computation to terminal
+!-----------------------------------------------------------------------
+!---Optional: Set input parameters for k2l------------------------------
+!-----------------------------------------------------------------------
+!---If cprm(1)='print', k2l prints details of its computation to terminal
     k2l_io%cprm(1)='print'
 !
-!+++If cprm(2)='user', instead of setting an initial interval by itself,
-!+++k2l uses a user-defined initial interval [s_lower,s_upper) containing
-!+++the [k_lower,k_upper]-th eigenvalues
+!---If cprm(2)='user', instead of setting an initial interval by itself,
+!---k2l uses a user-defined initial interval [s_lower,s_upper) containing
+!---the [k_lower,k_upper]-th eigenvalues
     ! k2l_io%cprm(2)='user'
     k2l_io%s_lower=userinterval_lower
     k2l_io%s_upper=userinterval_upper
 !
-!+++If cprm(3)='ipr', k2l computes inverse participation ratio for
-!+++electronic structure calculations of materials
+!---If cprm(3)='ipr', k2l computes inverse participation ratio for
+!---electronic structure calculations of materials
     k2l_io%cprm(3)='ipr'
+!
+!---If cprm(6)='second', k2l stops after the second stage (bisection) to compute
+!---an interval [s_lower2,s_upper2) containing the [k_lower2,k_upper2]-th
+!---eigenvalues (which include [k_lower,k_upper]-th eigenvalues).
+    ! k2l_io%cprm(6)='second'
+!
+!---Stopping criterion for the second stage (bisection):
+!---The initial interval is narrowed down until the number of eigenvalues
+!---in the interval becomes smaller than equal to
+!---MAX( k2l_io%iprm(10), CEILING( k2l_io%dprm(1) * (k_upper - k_lower + 1) ).
+!---In particular, if k2l_io%iprm(10) = 1 and k2l_io%dprm(1) = 1.0,
+!---the initial interval is narrowed down to contain only the
+!---[k_lower,k_upper]-th eigenvalues.
+!---It is recommended to change the following parameters only if users
+!---know how the three-stage algorithm works.
+    ! k2l_io%iprm(10)=1     ! Default value is 20
+    ! k2l_io%dprm(1)=1.0D0  ! Default value is 1.0D0
+!
 !-----------------------------------------------------------------------
 !---Compute the k_lower to k_upper eigenvalue pair(s)-------------------
 !-----------------------------------------------------------------------
@@ -131,15 +149,21 @@
 !---Write eigenpairs and inverse participation ratio (optional) to files
 !-----------------------------------------------------------------------
     IF(k2l_io%info.EQ.0) THEN
-!-------Write the k_lower to k_upper eigenvalue(s) in one file
-        CALL example_writekval(SIZE(k2l_io%kndx),k2l_io%kndx,k2l_io%kval)
-!-------Write the k_lower to k_upper eigenvector(s) in a separate file
-        CALL example_writekvec(k2l_io%n,SIZE(k2l_io%kndx),k2l_io%kndx,k2l_io%kvec)
+        IF(TRIM(ADJUSTL(k2l_io%cprm(6))).NE.'second') THEN
+!-----------Optional: Write the [k_lower,k_upper]-th eigenvalue(s) in one file
+            CALL example_writekval(SIZE(k2l_io%kndx),k2l_io%kndx,k2l_io%kval)
+!-----------Optional: Write the [k_lower,k_upper]-th eigenvector(s) in a separate file
+            CALL example_writekvec(k2l_io%n,SIZE(k2l_io%kndx),k2l_io%kndx,k2l_io%kvec)
 !
-        IF(TRIM(ADJUSTL(k2l_io%cprm(3))).EQ.'ipr') THEN
-!+++++++++++Optional: Write the k_lower to k_upper inverse participation
-!+++++++++++ratios in one file        
-            CALL example_writekipr(SIZE(k2l_io%kndx),k2l_io%kndx,k2l_io%kipr)
+            IF(TRIM(ADJUSTL(k2l_io%cprm(3))).EQ.'ipr') THEN
+!---------------Optional: Write the [k_lower,k_upper]-th inverse participation
+!---------------ratios in one file        
+                CALL example_writekipr(SIZE(k2l_io%kndx),k2l_io%kndx,k2l_io%kipr)
+            END IF
+        ELSE IF(TRIM(ADJUSTL(k2l_io%cprm(6))).EQ.'second') THEN
+!-----------Optional: Write the interval [s_lower2,s_upper2) containing
+!-----------the [k_lower2,k_upper2]-th eigenvalue(s) in one file
+            CALL example_writekint(k2l_io%k_lower2,k2l_io%k_upper2,k2l_io%s_lower2,k2l_io%s_upper2)
         END IF
     END IF
 !-----------------------------------------------------------------------
