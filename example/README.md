@@ -91,6 +91,13 @@ See description below together with [example.f90](/example/example.f90).
     * `k2l_io%kvec`: DOUBLE PRECISION. Two-dimensional array. Columns of the array are the `k2l_io%k_lower`-th to `k2l_io%k_upper`-th eigenvectors, normalized with respect to 2-norm.
     * `k2l_io%kipr`: DOUBLE PRECISION. One-dimensional array. Contains the 4-th power of the 4-norm of the `k2l_io%k_lower`-th to `k2l_io%k_upper`-th eigenvectors, normalized with respect to *B*-norm.
 
+    Following values are accessible if `k2l_io%cprm(6)`='second'. After the second stage (bisection), interval [`k2l_io%s_lower2`,`k2l_io%s_upper2`) containing the [`k2l_io%k_lower2`,`k2l_io%k_upper2`]-th eigenvalue(s) is obtained.
+
+    * `k2l_io%s_lower2`: DOUBLE PRECISION. Lower endpoint of the interval after the second stage. 
+    * `k2l_io%s_upper2`: DOUBLE PRECISION. Upper endpoint of the interval after the second stage.
+    * `k2l_io%k_lower2`: INTEGER. Lower end of the index range after the second stage.
+    * `k2l_io%k_upper2`: INTEGER. Upper end of the index range after the second stage.
+
 10. Finalize.
     ```
     k2l_io%job=-1
