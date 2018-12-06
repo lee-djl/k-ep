@@ -30,7 +30,7 @@
                         ! See below for the description of k2l_io%dprm(1).
     k2l_io%iprm(11)=MIN(50,k2l_io%n)    ! maximum iteration count for the first stage (Lanczos)
     k2l_io%iprm(12)=50                  ! maximum iteration count for the second stage (bisection)
-    k2l_io%iprm(13)=MIN(1000,k2l_io%n)  ! maximum iteration count for the third stage (shift-and-invert Lanczos)
+    k2l_io%iprm(13)=MIN(5000,k2l_io%n)  ! maximum iteration count for the third stage (shift-and-invert Lanczos)
 !
     k2l_io%dprm(1)=2.0D0        ! stopping criterion for the second stage (bisection)
                                 ! k2l narrow downs the initial interval until the number of eigenvalues

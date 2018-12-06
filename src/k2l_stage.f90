@@ -260,8 +260,8 @@
 !
                 k2l_int%icnt(1)=i
                 IF(i.NE.1) THEN
-                    IF((k2l_int%inertia_1_lower(1).LT.k2l_io%k_lower).AND.&
-                    &   (k2l_int%inertia_1_upper(1).GE.k2l_io%k_upper)) THEN
+                    IF((k2l_int%inertia_1_lower(i).LT.k2l_io%k_lower).AND.&
+                    &   (k2l_int%inertia_1_upper(i).GE.k2l_io%k_upper)) THEN
                         CALL k2l_ldl_finalize(k2l_io,k2l_factor_B)
                         EXIT
                     ELSE IF(i.EQ.imax_l) THEN
