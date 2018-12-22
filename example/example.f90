@@ -38,10 +38,16 @@
     &   userinterval_upper      ! s_upper
 !
 !---MPI (for MUMPS)
-    INTEGER :: ierr    
+    INCLUDE 'mpif.h'
+    INTEGER :: rank,ierr
 !
 !---k2l
     TYPE(k2l_io_type) :: k2l_io ! k2l-related varialbes (derived type)
+
+!---Initialize MPI (for using MUMPS)
+    CALL mpi_init(ierr)
+    CALL mpi_comm_rank(mpi_comm_world,rank,ierr)
+!
 !-----------------------------------------------------------------------
 !---Read command line arguments-----------------------------------------
 !-----------------------------------------------------------------------
@@ -74,8 +80,14 @@
 !---Read input matrices A and B from files------------------------------
 !---(coordinate format, Matrix Market MTX file)-------------------------
 !-----------------------------------------------------------------------
-    CALL example_readmtx(ipath_a,n,nz_a,indx_a,jndx_a,rval_a)
-    CALL example_readmtx(ipath_b,n,nz_b,indx_b,jndx_b,rval_b)
+    IF((rank.EQ.0)) THEN
+        CALL example_readmtx(ipath_a,n,nz_a,indx_a,jndx_a,rval_a)
+        CALL example_readmtx(ipath_b,n,nz_b,indx_b,jndx_b,rval_b)
+    END IF
+    
+    CALL mpi_bcast(n,1,mpi_integer,0,mpi_comm_world,ierr)
+    CALL mpi_bcast(nz_a,1,mpi_integer,0,mpi_comm_world,ierr)
+    CALL mpi_bcast(nz_b,1,mpi_integer,0,mpi_comm_world,ierr)
 !-----------------------------------------------------------------------
 !---Initialize k2l------------------------------------------------------
 !-----------------------------------------------------------------------
@@ -88,13 +100,15 @@
 !-----------------------------------------------------------------------
 !---Assign values of matrices A and B for k2l---------------------------
 !-----------------------------------------------------------------------
-    k2l_io%indx_a=indx_a    ! row index of A
-    k2l_io%jndx_a=jndx_a    ! column index of A
-    k2l_io%rval_a=rval_a    ! value of non-zero elements of A
+    IF((rank.EQ.0)) THEN
+        k2l_io%indx_a=indx_a    ! row index of A
+        k2l_io%jndx_a=jndx_a    ! column index of A
+        k2l_io%rval_a=rval_a    ! value of non-zero elements of A
 !
-    k2l_io%indx_b=indx_b    ! row index of B
-    k2l_io%jndx_b=jndx_b    ! column index of B
-    k2l_io%rval_b=rval_b    ! value of non-zero elements of B
+        k2l_io%indx_b=indx_b    ! row index of B
+        k2l_io%jndx_b=jndx_b    ! column index of B
+        k2l_io%rval_b=rval_b    ! value of non-zero elements of B
+    END IF
 !-----------------------------------------------------------------------
 !---Set the target index range for k2l----------------------------------
 !-----------------------------------------------------------------------
@@ -137,33 +151,29 @@
 !-----------------------------------------------------------------------
 !---Compute the k_lower to k_upper eigenvalue pair(s)-------------------
 !-----------------------------------------------------------------------
-!---Initialize MPI (for using MUMPS)
-    CALL mpi_init(ierr)
-!        
     k2l_io%job=1            ! Solve an eigenproblem (job = 1)
     CALL k2l(k2l_io)
-!    
-!---Finalize MPI (for using MUMPS)
-    CALL mpi_finalize(ierr)
 !-----------------------------------------------------------------------
 !---Write eigenpairs and inverse participation ratio (optional) to files
 !-----------------------------------------------------------------------
-    IF(k2l_io%info.EQ.0) THEN
-        IF(TRIM(ADJUSTL(k2l_io%cprm(6))).NE.'second') THEN
-!-----------Optional: Write the [k_lower,k_upper]-th eigenvalue(s) in one file
-            CALL example_writekval(SIZE(k2l_io%kndx),k2l_io%kndx,k2l_io%kval)
-!-----------Optional: Write the [k_lower,k_upper]-th eigenvector(s) in a separate file
-            CALL example_writekvec(k2l_io%n,SIZE(k2l_io%kndx),k2l_io%kndx,k2l_io%kvec)
+    IF((rank.EQ.0)) THEN
+        IF(k2l_io%info.EQ.0) THEN
+            IF(TRIM(ADJUSTL(k2l_io%cprm(6))).NE.'second') THEN
+!---------------Optional: Write the [k_lower,k_upper]-th eigenvalue(s) in one file
+                CALL example_writekval(SIZE(k2l_io%kndx),k2l_io%kndx,k2l_io%kval)
+!---------------Optional: Write the [k_lower,k_upper]-th eigenvector(s) in a separate file
+                CALL example_writekvec(k2l_io%n,SIZE(k2l_io%kndx),k2l_io%kndx,k2l_io%kvec)
 !
-            IF(TRIM(ADJUSTL(k2l_io%cprm(3))).EQ.'ipr') THEN
-!---------------Optional: Write the [k_lower,k_upper]-th inverse participation
-!---------------ratios in one file        
-                CALL example_writekipr(SIZE(k2l_io%kndx),k2l_io%kndx,k2l_io%kipr)
+                IF(TRIM(ADJUSTL(k2l_io%cprm(3))).EQ.'ipr') THEN
+!-------------------Optional: Write the [k_lower,k_upper]-th inverse participation
+!-------------------ratios in one file        
+                    CALL example_writekipr(SIZE(k2l_io%kndx),k2l_io%kndx,k2l_io%kipr)
+                END IF
+            ELSE IF(TRIM(ADJUSTL(k2l_io%cprm(6))).EQ.'second') THEN
+!---------------Optional: Write the interval [s_lower2,s_upper2) containing
+!---------------the [k_lower2,k_upper2]-th eigenvalue(s) in one file
+                CALL example_writekint(k2l_io%k_lower2,k2l_io%k_upper2,k2l_io%s_lower2,k2l_io%s_upper2)
             END IF
-        ELSE IF(TRIM(ADJUSTL(k2l_io%cprm(6))).EQ.'second') THEN
-!-----------Optional: Write the interval [s_lower2,s_upper2) containing
-!-----------the [k_lower2,k_upper2]-th eigenvalue(s) in one file
-            CALL example_writekint(k2l_io%k_lower2,k2l_io%k_upper2,k2l_io%s_lower2,k2l_io%s_upper2)
         END IF
     END IF
 !-----------------------------------------------------------------------
@@ -172,7 +182,11 @@
     k2l_io%job=-1            ! Finalize k2l (job = -1)
     CALL k2l(k2l_io)
 !-----------------------------------------------------------------------
-    DEALLOCATE(indx_a,jndx_a,rval_a,indx_b,jndx_b,rval_b)
+    IF(rank.EQ.0) DEALLOCATE(indx_a,jndx_a,rval_a,indx_b,jndx_b,rval_b)
+!
+!---Finalize MPI (for using MUMPS)
+    CALL mpi_finalize(ierr)
+!
     STOP
     END PROGRAM example
 !-----------------------------------------------------------------------

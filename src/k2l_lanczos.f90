@@ -189,7 +189,8 @@
             alpha(j)=dtmp
 !           bv(j+1):=bv(j+1)-B*v(j)*alpha(j)
             bv(:,j+1)=bv(:,j+1)-bv(:,j)*alpha(j)
-!           Fully reorthogonalize (Modified Gram-Schmidt)
+!
+!           Fully reorthogonalize (Modified Gram-Schmidt) once
             DO k=1,j
 !               dtmp:=(v(k),bv(j+1))
                 CALL k2l_innpro(n,v(:,k),bv(:,j+1),dtmp)
@@ -198,6 +199,17 @@
             END DO
 !           alpha(j):=alpha(j)+dtmp
             alpha(j)=alpha(j)+dtmp
+!
+!           Fully reorthogonalize (Modified Gram-Schmidt) twice
+            DO k=1,j
+!               dtmp:=(v(k),bv(j+1))
+                CALL k2l_innpro(n,v(:,k),bv(:,j+1),dtmp)
+!               bv(j+1):=bv(j+1)-BV(k)*dtmp
+                bv(:,j+1)=bv(:,j+1)-bv(:,k)*dtmp
+            END DO
+!           alpha(j):=alpha(j)+dtmp
+            alpha(j)=alpha(j)+dtmp
+!
 !           Return to the caller for matvec bv(j+1):=B*v(j) >>>>>>>>>>>>
             ijob=30
             RETURN

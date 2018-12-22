@@ -125,8 +125,4 @@ See description below. Refer to [Makefile.inc](/Makefile.inc) and [Makefile](/ex
 
 ### Execution
 
-See description below. Example job scripts can be found in [script](/example/script) directory.
-
-* *k*2*l* does not support MPI parallelism. Use only one MPI task.
-
-* No thread (OMP) parallelism is implemented in *k*2*l*. However, using more than one thread for *k*2*l* can be beneficial. This is because *k*2*l* calls MUMPS: Thread parallelism is implemented in MUMPS, and MUMPS can utilize multi-threaded BLAS.
+Example job scripts can be found in [script](/example/script) directory.

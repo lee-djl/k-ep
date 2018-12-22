@@ -6,12 +6,18 @@
     SUBROUTINE k2l_initialize_external(k2l_io)
     IMPLICIT NONE
     TYPE(k2l_io_type) :: k2l_io
+!    
+    INCLUDE 'mpif.h'
+    INTEGER :: rank,ierr
+    CALL mpi_comm_rank(mpi_comm_world,rank,ierr)
 !-----------------------------------------------------------------------
 !   Initialize parameters
-    k2l_io%k_lower=0            ! target index (lower)
-    k2l_io%k_upper=0            ! target index (upper)
-    k2l_io%s_lower=0.0D0        ! lower endpoint of user-defined interval
-    k2l_io%s_upper=0.0D0        ! upper endpoint of user-defined interval
+    IF((rank.EQ.0).OR.(TRIM(ADJUSTL(k2l_io%cprm(10))).NE.'mpioff')) THEN
+        k2l_io%k_lower=0            ! target index (lower)
+        k2l_io%k_upper=0            ! target index (upper)
+        k2l_io%s_lower=0.0D0        ! lower endpoint of user-defined interval
+        k2l_io%s_upper=0.0D0        ! upper endpoint of user-defined interval
+    END IF
 !
 !   Assign default values to parameters
     k2l_io%cprm(1)=''           ! If cprm(1) = 'print', print details of computation to terminal
@@ -23,6 +29,7 @@
     k2l_io%cprm(6)=''           ! If cprm(6) = 'second', k2l stops after the second stage (bisection).
                                 ! The interval [s_lower2,s_upper2) contains the [k_lower2 to k_upper2]-th 
                                 ! eigenvalues.
+    k2l_io%cprm(10)='mpioff'    ! If cprm(10) = 'mpioff', MPI paralleism is used only for a sparse direct linear solver
 !
     k2l_io%iprm(1) =8   ! 10**-iprm(1)=tolerance for relative residual 2-norm
     k2l_io%iprm(2) =6   ! 10**-iprm(2)=tolerance for relative difference 2-norm
@@ -40,9 +47,11 @@
                                 ! k2l narrow downs the initial interval to find an interval containing only 
                                 ! [k_lower to k_upper]-th eigenvalues
 !
-!   Allocate    
-    ALLOCATE(k2l_io%indx_a(k2l_io%nz_a),k2l_io%jndx_a(k2l_io%nz_a),k2l_io%rval_a(k2l_io%nz_a))    
-    ALLOCATE(k2l_io%indx_b(k2l_io%nz_b),k2l_io%jndx_b(k2l_io%nz_b),k2l_io%rval_b(k2l_io%nz_b))
+    IF((rank.EQ.0).OR.(TRIM(ADJUSTL(k2l_io%cprm(10))).NE.'mpioff')) THEN
+!       Allocate    
+        ALLOCATE(k2l_io%indx_a(k2l_io%nz_a),k2l_io%jndx_a(k2l_io%nz_a),k2l_io%rval_a(k2l_io%nz_a))    
+        ALLOCATE(k2l_io%indx_b(k2l_io%nz_b),k2l_io%jndx_b(k2l_io%nz_b),k2l_io%rval_b(k2l_io%nz_b))
+    END IF
 !-----------------------------------------------------------------------    
     RETURN
     END SUBROUTINE k2l_initialize_external
@@ -51,16 +60,22 @@
     IMPLICIT NONE
     TYPE(k2l_io_type) :: k2l_io
     TYPE(k2l_int_type) :: k2l_int
+!    
+    INCLUDE 'mpif.h'
+    INTEGER :: rank,ierr
+    CALL mpi_comm_rank(mpi_comm_world,rank,ierr)    
 !-----------------------------------------------------------------------
-!   Check input parameters
-    CALL k2l_checkinput(k2l_io)
+    IF((rank.EQ.0).OR.(TRIM(ADJUSTL(k2l_io%cprm(10))).NE.'mpioff')) THEN
+!       Check input parameters
+        CALL k2l_checkinput(k2l_io)
 !    
-!   Initialize internal variables
-    k2l_int%icnt=0
-    k2l_int%cmpt_time=0.0E0
+!       Initialize internal variables
+        k2l_int%icnt=0
+        k2l_int%cmpt_time=0.0E0
 !    
-!   Convert coordinate format to Compressed Row Storage (CRS) format       
-    CALL k2l_crd2crs(k2l_io,k2l_int)
+!       Convert coordinate format to Compressed Row Storage (CRS) format       
+        CALL k2l_crd2crs(k2l_io,k2l_int)
+    END IF
 !-----------------------------------------------------------------------    
     RETURN
     END SUBROUTINE k2l_initialize_internal    
@@ -159,48 +174,53 @@
     SUBROUTINE k2l_info(info)
     IMPLICIT NONE
     INTEGER :: info
-    INTEGER :: ierr        
+!    
+    INCLUDE 'mpif.h'
+    INTEGER :: rank,ierr
+    CALL mpi_comm_rank(mpi_comm_world,rank,ierr)        
 !-----------------------------------------------------------------------
 !
-    IF(info.NE.0) THEN
-        WRITE(6,*)
-    END IF
+    IF(rank.EQ.0) THEN
+        IF(info.NE.0) THEN
+            WRITE(6,*)
+        END IF
 !    
-    IF(info.EQ.-1) THEN
-        WRITE(6,*)'=====k2l info',info,': Allocate input matrices and assign values'    
-    ELSE IF(info.EQ.-11) THEN
-        WRITE(6,*)'=====k2l info',info,&
-            &   ': k_lower and k_upper must satisfy 1 < k_lower <= k_upper < n'
-    ELSE IF(info.EQ.-12) THEN
-        WRITE(6,*)'=====k2l info',info,': iprm(10) must satisfy 1 <= iprm(10) < n'
-    ELSE IF(info.EQ.-13) THEN
-        WRITE(6,*)'=====k2l info',info,': iprm(1) must satisfy 1 <= iprm(1) <= 16'
-    ELSE IF(info.EQ.-14) THEN
-        WRITE(6,*)'=====k2l info',info,': iprm(2) must satisfy 1 <= iprm(2) <= 16'
-    ELSE IF(info.EQ.-15) THEN
-        WRITE(6,*)'=====k2l info',info,': iprm(11) must satisfy 2 <= iprm(11) <= n'
-    ELSE IF(info.EQ.-16) THEN
-        WRITE(6,*)'=====k2l info',info,': iprm(12) must satisfy 0 <= iprm(12) <= 64'
-    ELSE IF(info.EQ.-17) THEN
-        WRITE(6,*)'=====k2l info',info,': iprm(13) must satisfy iprm(10) <= iprm(13) <= n'
-    ELSE IF(info.EQ.-18) THEN
-        WRITE(6,*)'=====k2l info',info,': s_lower and s_upper must satisfy s_lower < s_upper'
-    ELSE IF(info.EQ.-21) THEN
-        WRITE(6,*)'=====k2l info',info,': Select a sparse direct linear solver'                 
-    ELSE IF(info.EQ.-22) THEN
-        WRITE(6,*)'=====k2l info',info,': Select a bracketing algorithm'
-    ELSE IF(info.EQ.-31) THEN
-        WRITE(6,*)'=====k2l info',info,': dprm(1) must satisfy 1 <= dprm(1)'  
-    ELSE IF(info.EQ.1) THEN
-        WRITE(6,*)'=====k2l info',info,': Failed to set an initial interval'
-    ELSE IF(info.EQ.2) THEN
-        WRITE(6,*)'=====k2l info',info,': Failed to narrow down the interval'
-    ELSE IF(info.EQ.3) THEN
-        WRITE(6,*)'=====k2l info',info,': Failed to compute eipenpairs of the interval'
-    ELSE IF((info.GE.11).AND.(info.LT.20)) THEN
-        WRITE(6,*)'=====k2l info',info,': Error in LDL factorization'
-    ELSE IF(info.EQ.21) THEN
-        WRITE(6,*)'=====k2l info',info,': Error in bracketing algorithm'        
+        IF(info.EQ.-1) THEN
+            WRITE(6,*)'=====k2l info',info,': Allocate input matrices and assign values'    
+        ELSE IF(info.EQ.-11) THEN
+            WRITE(6,*)'=====k2l info',info,&
+                &   ': k_lower and k_upper must satisfy 1 < k_lower <= k_upper < n'
+        ELSE IF(info.EQ.-12) THEN
+            WRITE(6,*)'=====k2l info',info,': iprm(10) must satisfy 1 <= iprm(10) < n'
+        ELSE IF(info.EQ.-13) THEN
+            WRITE(6,*)'=====k2l info',info,': iprm(1) must satisfy 1 <= iprm(1) <= 16'
+        ELSE IF(info.EQ.-14) THEN
+            WRITE(6,*)'=====k2l info',info,': iprm(2) must satisfy 1 <= iprm(2) <= 16'
+        ELSE IF(info.EQ.-15) THEN
+            WRITE(6,*)'=====k2l info',info,': iprm(11) must satisfy 2 <= iprm(11) <= n'
+        ELSE IF(info.EQ.-16) THEN
+            WRITE(6,*)'=====k2l info',info,': iprm(12) must satisfy 0 <= iprm(12) <= 64'
+        ELSE IF(info.EQ.-17) THEN
+            WRITE(6,*)'=====k2l info',info,': iprm(13) must satisfy iprm(10) <= iprm(13) <= n'
+        ELSE IF(info.EQ.-18) THEN
+            WRITE(6,*)'=====k2l info',info,': s_lower and s_upper must satisfy s_lower < s_upper'
+        ELSE IF(info.EQ.-21) THEN
+            WRITE(6,*)'=====k2l info',info,': Select a sparse direct linear solver'                 
+        ELSE IF(info.EQ.-22) THEN
+            WRITE(6,*)'=====k2l info',info,': Select a bracketing algorithm'
+        ELSE IF(info.EQ.-31) THEN
+            WRITE(6,*)'=====k2l info',info,': dprm(1) must satisfy 1 <= dprm(1)'  
+        ELSE IF(info.EQ.1) THEN
+            WRITE(6,*)'=====k2l info',info,': Failed to set an initial interval'
+        ELSE IF(info.EQ.2) THEN
+            WRITE(6,*)'=====k2l info',info,': Failed to narrow down the interval'
+        ELSE IF(info.EQ.3) THEN
+            WRITE(6,*)'=====k2l info',info,': Failed to compute eipenpairs of the interval'
+        ELSE IF((info.GE.11).AND.(info.LT.20)) THEN
+            WRITE(6,*)'=====k2l info',info,': Error in LDL factorization'
+        ELSE IF(info.EQ.21) THEN
+            WRITE(6,*)'=====k2l info',info,': Error in bracketing algorithm'        
+        END IF
     END IF
 !-----------------------------------------------------------------------
     IF(info.NE.0) THEN
@@ -218,87 +238,99 @@
 !
     INTEGER :: ounit=6,i
     REAL :: rtmp
+!    
+    INCLUDE 'mpif.h'
+    INTEGER :: rank,ierr
+    CALL mpi_comm_rank(mpi_comm_world,rank,ierr)
 !-----------------------------------------------------------------------
 !
-    WRITE(ounit,*)
-    WRITE(ounit,*)'========================================================================'
-    WRITE(ounit,*)'====k2l summary========================================================='
-    WRITE(ounit,*)'========================================================================'
-    WRITE(ounit,*)
-    WRITE(ounit,*)'-----Problem'
-    WRITE(ounit,"(A8,I8,A10,I8,A45,I8)") 'Find the',k2l_io%k_lower,'-th to the',k2l_io%k_upper,&
-    &   '-th eigenpair(s) of a matrix pencil with size',k2l_io%n
-    WRITE(ounit,*)
-    WRITE(ounit,*)'-----Computation time (s)'
-    rtmp=0.0E0
-    DO i=1,10
-        rtmp=rtmp+k2l_int%cmpt_time(i)
-    END DO
-    WRITE(ounit,"(A51,F15.7,/)") 'Overall                                          :',rtmp
-    WRITE(ounit,"(A51,F15.7)") 'Stage 1 Task (i)   symbolic factor. A-sB          :',k2l_int%cmpt_time(1)
-    WRITE(ounit,"(A51,F15.7)") 'Stage 1 Task (ii)  symbolic & numer. factor. B    :',k2l_int%cmpt_time(2)
-    WRITE(ounit,"(A51,F15.7)") 'Stage 1 Task (iii) Lanczos                        :',k2l_int%cmpt_time(3)
-    WRITE(ounit,"(A51,F15.7)") 'Stage 1 Task (iv)  inertia computation            :',k2l_int%cmpt_time(4)
-    WRITE(ounit,"(A51,F15.7)") 'Stage 2 Task (v)   inertia computation            :',k2l_int%cmpt_time(5)
-    WRITE(ounit,"(A51,F15.7)") 'Stage 3 Task (vi)  symbolic & numer. factor. A-sB :',k2l_int%cmpt_time(6)    
-    WRITE(ounit,"(A51,F15.7,/)") 'Stage 3 Task (vii) SI Lanczos                     :',k2l_int%cmpt_time(7)
+    IF((rank.EQ.0).OR.(TRIM(ADJUSTL(k2l_io%cprm(10))).NE.'mpioff')) THEN
+        WRITE(ounit,*)
+        WRITE(ounit,*)'========================================================================'
+        WRITE(ounit,*)'====k2l summary========================================================='
+        WRITE(ounit,*)'========================================================================'
+        WRITE(ounit,*)
+        WRITE(ounit,*)'-----Problem'
+        WRITE(ounit,"(A8,I8,A10,I8,A45,I8)") 'Find the',k2l_io%k_lower,'-th to the',k2l_io%k_upper,&
+        &   '-th eigenpair(s) of a matrix pencil with size',k2l_io%n
+        WRITE(ounit,*)
+        WRITE(ounit,*)'-----Computation time (s)'
+        rtmp=0.0E0
+        DO i=1,10
+            rtmp=rtmp+k2l_int%cmpt_time(i)
+        END DO
+        WRITE(ounit,"(A51,F15.7,/)") 'Overall                                          :',rtmp
+        WRITE(ounit,"(A51,F15.7)") 'Stage 1 Task (i)   symbolic factor. A-sB          :',k2l_int%cmpt_time(1)
+        WRITE(ounit,"(A51,F15.7)") 'Stage 1 Task (ii)  symbolic & numer. factor. B    :',k2l_int%cmpt_time(2)
+        WRITE(ounit,"(A51,F15.7)") 'Stage 1 Task (iii) Lanczos                        :',k2l_int%cmpt_time(3)
+        WRITE(ounit,"(A51,F15.7)") 'Stage 1 Task (iv)  inertia computation            :',k2l_int%cmpt_time(4)
+        WRITE(ounit,"(A51,F15.7)") 'Stage 2 Task (v)   inertia computation            :',k2l_int%cmpt_time(5)
+        WRITE(ounit,"(A51,F15.7)") 'Stage 3 Task (vi)  symbolic & numer. factor. A-sB :',k2l_int%cmpt_time(6)    
+        WRITE(ounit,"(A51,F15.7,/)") 'Stage 3 Task (vii) SI Lanczos                     :',k2l_int%cmpt_time(7)
 !
-    WRITE(ounit,*)'-----Iteration count'
-    WRITE(ounit,"(A9,I4)") 'Stage 1 :',k2l_int%icnt(1)
-    WRITE(ounit,"(A9,I4)") 'Stage 2 :',k2l_int%icnt(2)
-    WRITE(ounit,"(A9,I4,/)") 'Stage 3 :',k2l_int%icnt(4)
+        WRITE(ounit,*)'-----Iteration count'
+        WRITE(ounit,"(A9,I4)") 'Stage 1 :',k2l_int%icnt(1)
+        WRITE(ounit,"(A9,I4)") 'Stage 2 :',k2l_int%icnt(2)
+        WRITE(ounit,"(A9,I4,/)") 'Stage 3 :',k2l_int%icnt(4)
 
-    WRITE(ounit,*)'-----LDL factorization'
-    WRITE(ounit,"(A74,I16)") 'Total number of LDL factorizations performed :',k2l_int%icnt(5)
-    WRITE(ounit,"(A74,I16,/)") 'Average number of nonzero elements in the factor L of LDL factorizations :',INT(k2l_int%icnt(6)/k2l_int%icnt(5),8)
+        WRITE(ounit,*)'-----LDL factorization'
+        WRITE(ounit,"(A74,I16)") 'Total number of LDL factorizations performed :',k2l_int%icnt(5)
+        WRITE(ounit,"(A74,I16,/)") 'Average number of nonzero elements in the factor L of LDL factorizations :',INT(k2l_int%icnt(6)/k2l_int%icnt(5),8)
 !
-    WRITE(ounit,*)'-----Stage 1: set an initial interval'
-    WRITE(ounit,"(A9,2X,A12,2X,A12,2X,A28,2X,A28)")'Iteration','InertiaLower','InertiaUpper',&
-    &   'ShiftLower                  ','ShiftUpper                        '
-    DO i=1,k2l_int%icnt(1)
-        WRITE(ounit,"(I9,2X,I12,2X,I12,2X,E28.18,2X,E28.18)") &
-        &   i,k2l_int%inertia_1_lower(i),k2l_int%inertia_1_upper(i),&
-        &   k2l_int%shift_1_lower(i),k2l_int%shift_1_upper(i)
-    END DO
+        WRITE(ounit,*)'-----Stage 1: set an initial interval'
+        WRITE(ounit,"(A9,2X,A12,2X,A12,2X,A28,2X,A28)")'Iteration','InertiaLower','InertiaUpper',&
+        &   'ShiftLower                  ','ShiftUpper                        '
+        DO i=1,k2l_int%icnt(1)
+            WRITE(ounit,"(I9,2X,I12,2X,I12,2X,E28.18,2X,E28.18)") &
+            &   i,k2l_int%inertia_1_lower(i),k2l_int%inertia_1_upper(i),&
+            &   k2l_int%shift_1_lower(i),k2l_int%shift_1_upper(i)
+        END DO
+    END IF
 !
     IF(k2l_io%info.EQ.1) THEN
         RETURN
     END IF
 !
-    WRITE(ounit,*)
-    WRITE(ounit,*) '-----Stage 2: narrow down the interval'
-    WRITE(ounit,"(A9,2X,A12,2X,A12,2X,A28,2X,A28)")'Iteration','InertiaLower','InertiaUpper',&
-    &   'ShiftLower                  ','ShiftUpper                  '
-    DO i=0,k2l_int%icnt(2)
-        WRITE(ounit,"(I9,2X,I12,2X,I12,2X,E28.18,2X,E28.18)") &
-        &   i,k2l_int%inertia_2_lower(i),k2l_int%inertia_2_upper(i),&
-        &   k2l_int%shift_2_lower(i),k2l_int%shift_2_upper(i)
-    END DO
+    IF((rank.EQ.0).OR.(TRIM(ADJUSTL(k2l_io%cprm(10))).NE.'mpioff')) THEN    
+        WRITE(ounit,*)
+        WRITE(ounit,*) '-----Stage 2: narrow down the interval'
+        WRITE(ounit,"(A9,2X,A12,2X,A12,2X,A28,2X,A28)")'Iteration','InertiaLower','InertiaUpper',&
+        &   'ShiftLower                  ','ShiftUpper                  '
+        DO i=0,k2l_int%icnt(2)
+            WRITE(ounit,"(I9,2X,I12,2X,I12,2X,E28.18,2X,E28.18)") &
+            &   i,k2l_int%inertia_2_lower(i),k2l_int%inertia_2_upper(i),&
+            &   k2l_int%shift_2_lower(i),k2l_int%shift_2_upper(i)
+        END DO
+    END IF
 !
     IF(k2l_io%info.EQ.2) THEN
         RETURN
     END IF
 !
-    WRITE(ounit,*)
-    WRITE(ounit,*) '-----Stage 3: select the midpoint'
-    WRITE(ounit,"(A8,2X,A28)")'Inertia','Shift                       '
-    WRITE(ounit,"(I8,2X,E28.18)") &
-    &   k2l_int%inertia_3(1),k2l_int%shift_3(1)
+    IF((rank.EQ.0).OR.(TRIM(ADJUSTL(k2l_io%cprm(10))).NE.'mpioff')) THEN    
+        WRITE(ounit,*)
+        WRITE(ounit,*) '-----Stage 3: select the midpoint'
+        WRITE(ounit,"(A8,2X,A28)")'Inertia','Shift                       '
+        WRITE(ounit,"(I8,2X,E28.18)") &
+        &   k2l_int%inertia_3(1),k2l_int%shift_3(1)
+    END IF
 !
     IF(k2l_io%info.EQ.3) THEN
         RETURN
     END IF
 !
-    IF(PRESENT(k2l_c)) THEN
-        WRITE(ounit,*)
-        WRITE(ounit,*) '-----Stage 3: compute eipenpairs of the interval'
-        WRITE(ounit,"(A8,2X,A28,2X,A28,2X,A28)")'Index   ','Eigenvalue                  ',&
-        &   'Relative residual 2-norm    ','Relative difference 2-norm    '
-        DO i=1,k2l_int%icnt(3)
-            WRITE(ounit,"(I8,2X,E28.18,2X,E28.18,2X,E28.18)") &
-            &   k2l_int%inertia_2_lower(k2l_int%icnt(2))+i, &
-            &   k2l_c%egnval(i),k2l_c%resnorm(i),k2l_c%difnorm(i)
-        END DO
+    IF((rank.EQ.0).OR.(TRIM(ADJUSTL(k2l_io%cprm(10))).NE.'mpioff')) THEN    
+        IF(PRESENT(k2l_c)) THEN
+            WRITE(ounit,*)
+            WRITE(ounit,*) '-----Stage 3: compute eipenpairs of the interval'
+            WRITE(ounit,"(A8,2X,A28,2X,A28,2X,A28)")'Index   ','Eigenvalue                  ',&
+            &   'Relative residual 2-norm    ','Relative difference 2-norm    '
+            DO i=1,k2l_int%icnt(3)
+                WRITE(ounit,"(I8,2X,E28.18,2X,E28.18,2X,E28.18)") &
+                &   k2l_int%inertia_2_lower(k2l_int%icnt(2))+i, &
+                &   k2l_c%egnval(i),k2l_c%resnorm(i),k2l_c%difnorm(i)
+            END DO
+        END IF
     END IF
 !    
     RETURN

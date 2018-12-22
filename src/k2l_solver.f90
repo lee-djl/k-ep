@@ -512,6 +512,10 @@
     INTEGER :: i
     DOUBLE PRECISION :: dtmp
     DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:) :: vtmp
+!
+    INCLUDE 'mpif.h'
+    INTEGER :: rank,ierr
+    CALL mpi_comm_rank(mpi_comm_world,rank,ierr)   
 !-----------------------------------------------------------------------
 !
     IF(TRIM(ADJUSTL(k2l_io%cprm(6))).EQ.'second') THEN
@@ -519,6 +523,10 @@
     END IF
 !
     IF(TRIM(ADJUSTL(k2l_io%cprm(3))).NE.'ipr') THEN
+        RETURN
+    END IF
+!
+    IF((rank.NE.0).AND.(TRIM(ADJUSTL(k2l_io%cprm(10))).EQ.'mpioff')) THEN
         RETURN
     END IF
 !

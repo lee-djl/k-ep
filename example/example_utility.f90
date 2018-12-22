@@ -17,7 +17,6 @@
     COMPLEX, ALLOCATABLE, DIMENSION(:) :: cval
 !
     PARAMETER (nz_mx=2147483647)
-!
 !-----------------------------------------------------------------------
     OPEN(UNIT=iunit,FILE=TRIM(ADJUSTL(ipath)),STATUS='OLD',&
     &   ACCESS='SEQUENTIAL',ACTION='READ')
