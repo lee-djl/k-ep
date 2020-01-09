@@ -109,8 +109,8 @@
             ALLOCATE(k2l_factor%dmumps%irn(k2l_factor%dmumps%nz),&
                 &    k2l_factor%dmumps%jcn(k2l_factor%dmumps%nz))
             !
-            k2l_factor%dmumps%irn(1:k2l_io%nz_a)=k2l_io%indx_b
-            k2l_factor%dmumps%jcn(1:k2l_io%nz_a)=k2l_io%jndx_b
+            k2l_factor%dmumps%irn(1:k2l_factor%dmumps%nz)=k2l_io%indx_b
+            k2l_factor%dmumps%jcn(1:k2l_factor%dmumps%nz)=k2l_io%jndx_b
         END IF
     END IF
 !
@@ -172,7 +172,7 @@
                 k2l_factor%dmumps%a(k2l_io%nz_a+1:k2l_factor%dmumps%nz)=-shift
             END IF
         ELSE
-            k2l_factor%dmumps%a(1:k2l_io%nz_a)=k2l_io%rval_b
+            k2l_factor%dmumps%a(1:k2l_factor%dmumps%nz)=k2l_io%rval_b
         END IF
     END IF
 !
@@ -356,6 +356,8 @@
         IF(k2l_factor%dmumps%job.NE.-1) THEN
             DEALLOCATE(k2l_factor%dmumps%irn)
             DEALLOCATE(k2l_factor%dmumps%jcn)
+        END IF
+        IF(k2l_factor%dmumps%job.GE.2) THEN
             DEALLOCATE(k2l_factor%dmumps%a)
         END IF
         IF(k2l_factor%dmumps%job.EQ.3) THEN
@@ -366,6 +368,10 @@
 !   Finallize dMUMPS
     k2l_factor%dmumps%job=-2    ! job type: finalization
     CALL dmumps(k2l_factor%dmumps)
+    IF(k2l_factor%dmumps%infog(1).LT.0) THEN
+        CALL k2l_dmumps_err(-2)
+        CALL k2l_info(14)
+    END IF
 !
     RETURN
     END SUBROUTINE  k2l_ldl_finalize_dmumps
@@ -381,6 +387,8 @@
     CALL mpi_comm_rank(mpi_comm_world,rank,ierr)
     IF(rank.EQ.0) THEN
         SELECT CASE(info)
+            CASE(-2)
+                WRITE(6,*) '=====k2l: dMUMPS failed to be finalized'
             CASE(-1)
                 WRITE(6,*) '=====k2l: dMUMPS failed to be initialized'
             CASE(1)
